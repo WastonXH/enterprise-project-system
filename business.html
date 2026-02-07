@@ -6,6 +6,55 @@
     <title>业务部 | 企业项目管理系统</title>
     <link rel="stylesheet" href="styles.css">
 </head>
+    <script>
+    // 应用类别联动
+    function handleApplicationCategoryChange() {
+        const select = document.getElementById('applicationCategory');
+        const otherSection = document.getElementById('otherApplicationSection');
+        const otherInput = document.getElementById('otherApplication');
+        
+        if (select.value === 'other') {
+            otherSection.style.display = 'block';
+            otherInput.setAttribute('required', 'required');
+        } else {
+            otherSection.style.display = 'none';
+            otherInput.removeAttribute('required');
+            otherInput.value = '';
+        }
+    }
+
+    // 技术类别联动
+    function handleProductCategoryChange() {
+        const select = document.getElementById('productCategory');
+        const otherSection = document.getElementById('otherProductCategorySection');
+        const otherInput = document.getElementById('otherProductCategory');
+        
+        if (select.value === 'other') {
+            otherSection.style.display = 'block';
+            otherInput.setAttribute('required', 'required');
+        } else {
+            otherSection.style.display = 'none';
+            otherInput.removeAttribute('required');
+            otherInput.value = '';
+        }
+    }
+
+    // 产品结构联动
+    function handleProductStructureChange() {
+        const select = document.getElementById('productStructure');
+        const otherSection = document.getElementById('otherProductStructureSection');
+        const otherInput = document.getElementById('otherProductStructure');
+        
+        if (select.value === 'other') {
+            otherSection.style.display = 'block';
+            otherInput.setAttribute('required', 'required');
+        } else {
+            otherSection.style.display = 'none';
+            otherInput.removeAttribute('required');
+            otherInput.value = '';
+        }
+    }
+</script>
 <body><script src="form-enhancement.js"></script>
     <header>
         <div class="container">
