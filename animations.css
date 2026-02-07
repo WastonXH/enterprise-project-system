@@ -1,0 +1,315 @@
+/* 页面进入动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-5px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(5px);
+    }
+}
+
+/* 应用动画到页面元素 */
+main {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.welcome {
+    animation: fadeIn 0.8s ease-out;
+}
+
+/* 卡片动画 */
+.card {
+    animation: scaleIn 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+/* 工作流程步骤动画 */
+.step {
+    animation: slideInLeft 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.step:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.step:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.step:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+.step:nth-child(4) {
+    animation-delay: 0.5s;
+}
+
+/* 表单卡片动画 */
+.form-card {
+    animation: fadeInUp 0.7s ease-out;
+    animation-fill-mode: both;
+}
+
+.form-section {
+    animation: fadeIn 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+.form-section:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.form-section:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.form-section:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.form-section:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.form-section:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+/* 表格行动画 */
+tbody tr {
+    animation: fadeIn 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+tbody tr:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+tbody tr:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+tbody tr:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+/* 标签页切换动画 */
+.tab-btn {
+    animation: fadeIn 0.3s ease-out;
+    transition: all 0.3s ease;
+}
+
+/* 信息卡片动画 */
+.info-card {
+    animation: slideInRight 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+/* 按钮悬停增强动画 */
+.btn:hover {
+    animation: pulse 0.5s ease-in-out;
+}
+
+/* 表单输入框聚焦动画 */
+input:focus,
+select:focus,
+textarea:focus {
+    animation: none;
+}
+
+/* 滚动时显示元素 */
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 页面加载时的加载动画 */
+@keyframes pageLoad {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    50% {
+        opacity: 0.5;
+        transform: translateY(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+body {
+    animation: pageLoad 0.8s ease-out;
+}
+
+/* 图标动画 */
+.icon {
+    transition: transform 0.3s ease;
+}
+
+.card:hover .icon {
+    animation: bounce 0.8s ease-in-out;
+}
+
+/* 徽章动画 */
+.badge {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* 表单提交成功动画 */
+@keyframes successPopup {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.success-message {
+    animation: successPopup 0.5s ease-out;
+}
+
+/* 错误抖动动画 */
+.error-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+/* 页脚动画 */
+footer {
+    animation: fadeIn 0.6s ease-out;
+    animation-delay: 0.6s;
+    animation-fill-mode: both;
+}
+
+/* 表格卡片动画 */
+.table-card {
+    animation: fadeInUp 0.7s ease-out;
+    animation-delay: 0.3s;
+    animation-fill-mode: both;
+}
+
+/* 产品型号显示动画 */
+.model-display {
+    animation: pulse 0.6s ease-in-out;
+}
+
+/* 触摸屏配置动画 */
+.touchscreen-config {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .card {
+        animation: fadeInUp 0.6s ease-out !important;
+        animation-delay: 0.1s !important;
+    }
+}
