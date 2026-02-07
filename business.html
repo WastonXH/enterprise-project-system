@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>业务部 | 企业项目管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" class="back-btn">← 返回首页</a>
+            <div class="header-title">
+                <h1>💼 业务部工作台</h1>
+                <p>项目需求录入</p>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="form-card">
+            <div class="card-header">
+                <h2>➕ 新增项目需求</h2>
+                <p>请填写完整的项目需求信息，所有标记为 * 的字段为必填项</p>
+            </div>
+            
+            <form>
+                <div class="form-section">
+                    <h3>📋 基础信息</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>业务组别 <span class="required">*</span></label>
+                            <input type="text" placeholder="例如：华东区一组" required>
+                        </div>
+                        <div class="form-group">
+                            <label>客户名称 <span class="required">*</span></label>
+                            <input type="text" placeholder="例如：华为技术有限公司" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📐 项目需求</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>尺寸</label>
+                            <input type="text" placeholder="例如：15.6英寸">
+                        </div>
+                        <div class="form-group">
+                            <label>分辨率</label>
+                            <input type="text" placeholder="例如：1920×1080">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>产品类别 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择产品类别</option>
+                                <option value="TFT-LCD">TFT-LCD</option>
+                                <option value="OLED">OLED</option>
+                                <option value="IPS">IPS</option>
+                                <option value="VA">VA</option>
+                                <option value="TN">TN</option>
+                                <option value="MVA">MVA</option>
+                                <option value="PLS">PLS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>项目等级 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择项目等级</option>
+                                <option value="A级">A级</option>
+                                <option value="B级">B级</option>
+                                <option value="C级">C级</option>
+                                <option value="D级">D级</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>产品应用</label>
+                        <textarea placeholder="请描述产品的应用场景，例如：智能手机、平板电脑、车载显示器等" rows="3"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📝 项目基本信息及要求</h3>
+                    <div class="form-group">
+                        <label>详细信息</label>
+                        <textarea placeholder="请详细描述项目的基本信息、技术要求、交付时间、特殊要求等..." rows="6"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="index.html" class="btn btn-secondary">取消</a>
+                    <button type="submit" class="btn btn-primary">💾 提交项目需求</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="info-card">
+            <h3>💡 提示</h3>
+            <p>这是演示版本，表单功能需要完整的后端支持。您可以查看界面布局和字段设计。</p>
+        </div>
+    </main>
+</body>
+</html>
