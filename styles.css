@@ -589,3 +589,35 @@ footer {
         overflow-x: auto;
     }
 }
+/* 温度范围输入 */
+.temperature-range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.temperature-range input {
+    flex: 1;
+}
+
+.temperature-range span {
+    color: #666;
+}
+
+/* 可选：让温度输入框更好看 */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    color: #999;
+    font-size: 12px;
+}
