@@ -136,6 +136,37 @@
         <option value="立项评估">立项评估</option>
     </select>
 </div>
+        <!-- 产品规格 -->
+<div class="form-section">
+    <h3>产品规格</h3>
+    <div class="form-group">
+        <label for="brightness">亮度要求</label>
+        <input type="text" id="brightness" name="brightness" placeholder="例如：500">
+        <small>单位：cd/m²</small>
+    </div>
+    <div class="form-group">
+        <label for="contrastRatio">对比度要求</label>
+        <input type="text" id="contrastRatio" name="contrastRatio" placeholder="例如：1000:1">
+    </div>
+    <div class="form-group">
+        <label>工作温度要求 *</label>
+        <div class="temperature-range">
+            <input type="number" id="workTempLow" name="workTempLow" placeholder="低温" required>
+            <span>°C ~</span>
+            <input type="number" id="workTempHigh" name="workTempHigh" placeholder="高温" required>
+            <span>°C</span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>存储温度要求 *</label>
+        <div class="temperature-range">
+            <input type="number" id="storageTempLow" name="storageTempLow" placeholder="低温" required>
+            <span>°C ~</span>
+            <input type="number" id="storageTempHigh" name="storageTempHigh" placeholder="高温" required>
+            <span>°C</span>
+        </div>
+    </div>
+</div>            
                 <div class="form-section">
                     <h3>📝 项目基本信息及要求</h3>
                     <div class="form-group">
