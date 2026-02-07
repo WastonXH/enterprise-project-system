@@ -51,37 +51,91 @@
                             <input type="text" placeholder="例如：1920×1080">
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>产品类别 <span class="required">*</span></label>
-                            <select required>
-                                <option value="">请选择产品类别</option>
-                                <option value="TFT-LCD">TFT-LCD</option>
-                                <option value="OLED">OLED</option>
-                                <option value="IPS">IPS</option>
-                                <option value="VA">VA</option>
-                                <option value="TN">TN</option>
-                                <option value="MVA">MVA</option>
-                                <option value="PLS">PLS</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>项目等级 <span class="required">*</span></label>
-                            <select required>
-                                <option value="">请选择项目等级</option>
-                                <option value="A级">A级</option>
-                                <option value="B级">B级</option>
-                                <option value="C级">C级</option>
-                                <option value="D级">D级</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>产品应用</label>
-                        <textarea placeholder="请描述产品的应用场景，例如：智能手机、平板电脑、车载显示器等" rows="3"></textarea>
-                    </div>
-                </div>
-                
+                   <!-- 技术类别 -->
+<div class="form-section">
+    <label for="productCategory">技术类别 *</label>
+    <select id="productCategory" name="productCategory" required onchange="handleProductCategoryChange()">
+        <option value="">请选择技术类别</option>
+        <option value="tft_ips">TFT-LCD（IPS）</option>
+        <option value="tft_tn">TFT-LCD(TN)</option>
+        <option value="tft_va">TFT-LCD(VA,MVA,PLS)</option>
+        <option value="oled">OLED</option>
+        <option value="mono_lcd">MONO-LCD（单色液晶）</option>
+        <option value="e_paper">E-PAPER</option>
+        <option value="other">其它</option>
+    </select>
+</div>
+
+<!-- 当选择"其它"技术类别时显示的输入框 -->
+<div class="form-section" id="otherProductCategorySection" style="display: none;">
+    <label for="otherProductCategory">请填写具体技术类别 *</label>
+    <input type="text" id="otherProductCategory" name="otherProductCategory" placeholder="请输入具体技术类别">
+</div>
+
+<!-- 项目等级 -->
+<div class="form-section">
+    <label for="projectLevel">项目等级 *</label>
+    <select id="projectLevel" name="projectLevel" required>
+        <option value="">请选择项目等级</option>
+        <option value="S级">S级</option>
+        <option value="A级">A级</option>
+        <option value="B级">B级</option>
+        <option value="C级">C级</option>
+        <option value="D级">D级</option>
+    </select>
+</div>
+
+<!-- 产品结构 -->
+<div class="form-section">
+    <label for="productStructure">产品结构 *</label>
+    <select id="productStructure" name="productStructure" required onchange="handleProductStructureChange()">
+        <option value="">请选择产品结构</option>
+        <option value="s_lcm">S-LCM（单模组，FOG+背光）</option>
+        <option value="t_lcm">T-LCM（TP/LENS+LCM）</option>
+        <option value="p_lcm">P-LCM（S-LCM+PCBA）</option>
+        <option value="a_lcm">A-LCM(总成，如LCM+盖板+PCBA)</option>
+        <option value="fog">FOG</option>
+        <option value="fob">FOB</option>
+        <option value="other">其它</option>
+    </select>
+</div>
+
+<!-- 当选择"其它"产品结构时显示的输入框 -->
+<div class="form-section" id="otherProductStructureSection" style="display: none;">
+    <label for="otherProductStructure">请填写具体产品结构 *</label>
+    <input type="text" id="otherProductStructure" name="otherProductStructure" placeholder="请输入具体产品结构">
+</div>
+
+<!-- 应用类别 -->
+<div class="form-section">
+    <label for="applicationCategory">应用类别 *</label>
+    <select id="applicationCategory" name="applicationCategory" required onchange="handleApplicationCategoryChange()">
+        <option value="">请选择应用类别</option>
+        <option value="vehicle_pre">车载前装</option>
+        <option value="vehicle_after">车载后装</option>
+        <option value="industrial">工控</option>
+        <option value="medical">医疗</option>
+        <option value="appliance">家电</option>
+        <option value="commercial">商业</option>
+        <option value="other">其它</option>
+    </select>
+</div>
+
+<!-- 当选择"其它"应用类别时显示的输入框 -->
+<div class="form-section" id="otherApplicationSection" style="display: none;">
+    <label for="otherApplication">请填写具体应用 *</label>
+    <input type="text" id="otherApplication" name="otherApplication" placeholder="请输入具体应用内容">
+</div>
+
+<!-- 出图要求 -->
+<div class="form-section">
+    <label for="drawingRequirement">出图要求 *</label>
+    <select id="drawingRequirement" name="drawingRequirement" required>
+        <option value="">请选择出图要求</option>
+        <option value="仅报价评估">仅报价评估</option>
+        <option value="立项评估">立项评估</option>
+    </select>
+</div>
                 <div class="form-section">
                     <h3>📝 项目基本信息及要求</h3>
                     <div class="form-group">
