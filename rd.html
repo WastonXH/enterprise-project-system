@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研发部 | 企业项目管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" class="back-btn">← 返回首页</a>
+            <div class="header-title">
+                <h1>🔧 研发部工作台</h1>
+                <p>设计方案与型号生成</p>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="form-card">
+            <div class="card-header">
+                <h2>⚙️ 设计方案配置</h2>
+                <p>选择项目需求并进行方案设计，系统将自动生成产品型号</p>
+            </div>
+            
+            <form>
+                <div class="form-section">
+                    <h3>📁 选择项目需求</h3>
+                    <div class="form-group">
+                        <label>选择项目 <span class="required">*</span></label>
+                        <select required>
+                            <option value="">请选择项目需求</option>
+                            <option value="1">华为 - TFT-LCD (15.6英寸) - A级</option>
+                            <option value="2">小米 - OLED (6.5英寸) - B级</option>
+                            <option value="3">三星 - IPS (27英寸) - A级</option>
+                        </select>
+                    </div>
+                    <div class="project-info">
+                        <h4>📊 项目信息</h4>
+                        <div class="info-grid">
+                            <span><strong>客户：</strong>华为技术有限公司</span>
+                            <span><strong>类别：</strong>TFT-LCD</span>
+                            <span><strong>尺寸：</strong>15.6英寸</span>
+                            <span><strong>等级：</strong>A级</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🔩 核心组件选型</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>玻璃型号 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择玻璃型号</option>
+                                <option value="1">LCM-G-156-001 (京东方)</option>
+                                <option value="2">LCM-G-065-002 (夏普)</option>
+                                <option value="3">LCM-G-270-003 (三星)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>IC型号 <span class="required">*</span></label>
+                            <select required>
+                                <option value="">请选择IC型号</option>
+                                <option value="1">LCM-IC-8825-001 (联发科)</option>
+                                <option value="2">LCM-IC-8825-002 (高通)</option>
+                                <option value="3">LCM-IC-8825-003 (瑞芯微)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>偏光片类型</label>
+                        <select>
+                            <option value="">请选择偏光片类型</option>
+                            <option value="普通型">普通型</option>
+                            <option value="广视角型">广视角型</option>
+                            <option value="高对比度型">高对比度型</option>
+                            <option value="低反射型">低反射型</option>
+                            <option value="特殊应用型">特殊应用型</option>
+                        </select>
+                    </div>
+                    
+                    <div class="product-model">
+                        <h4>🎯 生成的产品型号</h4>
+                        <div class="model-display">LCM-TFT-LCD-15.6-001-001</div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🔌 FPC和背光配置</h3>
+                    <div class="form-group">
+                        <label>FPC选项</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="fpc" value="共用"> 共用型号</label>
+                            <label><input type="radio" name="fpc" value="新开"> 新开</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>背光选项</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="backlight" value="共用"> 共用型号</label>
+                            <label><input type="radio" name="backlight" value="新开"> 新开</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📱 触摸屏配置</h3>
+                    <div class="form-group">
+                        <label>触摸屏类型</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="touchscreen" value="电阻"> 电阻屏</label>
+                            <label><input type="radio" name="touchscreen" value="电容"> 电容屏</label>
+                        </div>
+                    </div>
+                    
+                    <div class="touchscreen-config">
+                        <h5>电阻屏配置</h5>
+                        <div class="radio-group">
+                            <label><input type="radio" name="resistive" value="共用"> 共用型号</label>
+                            <label><input type="radio" name="resistive" value="新开"> 新开</label>
+                        </div>
+                    </div>
+                    
+                    <div class="touchscreen-config">
+                        <h5>电容屏参数</h5>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>触控IC</label>
+                                <input type="text" placeholder="触控IC型号">
+                            </div>
+                            <div class="form-group">
+                                <label>盖板材质</label>
+                                <input type="text" placeholder="例如：钢化玻璃">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>触控点数需求</label>
+                            <input type="number" placeholder="例如：10">
+                        </div>
+                        <div class="form-group">
+                            <label>特殊应用</label>
+                            <textarea placeholder="请描述特殊应用场景" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="index.html" class="btn btn-secondary">取消</a>
+                    <button type="submit" class="btn btn-primary">💾 保存设计方案</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="info-card">
+            <h3>💡 提示</h3>
+            <p>选择不同的组件会自动生成不同的产品型号。完整功能需要后端API支持，当前为演示界面。</p>
+        </div>
+    </main>
+</body>
+</html>
