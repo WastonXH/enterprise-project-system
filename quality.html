@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>质量部 | 企业项目管理系统</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="index.html" class="back-btn">← 返回首页</a>
+            <div class="header-title">
+                <h1>✅ 质量部工作台</h1>
+                <p>试产质量记录</p>
+            </div>
+        </div>
+    </header>
+    
+    <main class="container">
+        <div class="form-card">
+            <div class="card-header">
+                <h2>📝 试产质量记录</h2>
+                <p>记录产品试产过程中的质量表现、测试结果及改进措施</p>
+            </div>
+            
+            <form>
+                <div class="form-section">
+                    <h3>📦 选择产品</h3>
+                    <div class="form-group">
+                        <label>选择设计方案（产品型号） <span class="required">*</span></label>
+                        <select required>
+                            <option value="">请选择产品型号</option>
+                            <option value="1">LCM-TFT-LCD-15.6-001-001</option>
+                            <option value="2">LCM-OLED-065-002-002</option>
+                            <option value="3">LCM-IPS-270-003-003</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📅 试产基本信息</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>试产日期 <span class="required">*</span></label>
+                            <input type="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>生产批次</label>
+                            <input type="text" placeholder="例如：BATCH-2025-001">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>📊 质量指标</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>质量指标</label>
+                            <textarea placeholder="请描述主要质量指标，例如：亮度300cd/m²、对比度1000:1、色域72% NTSC" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>缺陷率 (%)</label>
+                            <input type="number" step="0.01" min="0" max="100" placeholder="例如：2.5">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>🧪 测试结果</h3>
+                    <div class="form-group">
+                        <label>测试结果记录</label>
+                        <textarea placeholder="请详细记录测试结果，包括各项测试的通过情况、异常表现等" rows="6"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>❓ 问题与改进</h3>
+                    <div class="form-group">
+                        <label>问题记录</label>
+                        <textarea placeholder="请记录试产过程中发现的问题，包括问题描述、发生频率、影响程度等" rows="5"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>改进措施</label>
+                        <textarea placeholder="请描述针对发现的问题制定的改进措施、责任人、完成时限等" rows="5"></textarea>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3>👤 检验信息</h3>
+                    <div class="form-group">
+                        <label>检验员 <span class="required">*</span></label>
+                        <input type="text" placeholder="请输入检验员姓名" required>
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <a href="index.html" class="btn btn-secondary">取消</a>
+                    <button type="submit" class="btn btn-primary">💾 提交质量记录</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="info-card">
+            <h3>💡 提示</h3>
+            <p>这是演示版本，表单功能需要完整的后端支持。您可以查看界面布局和字段设计。</p>
+        </div>
+    </main>
+</body>
+</html>
