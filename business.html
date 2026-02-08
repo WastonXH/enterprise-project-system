@@ -40,20 +40,55 @@
     }
 
     // 产品结构联动
-    function handleProductStructureChange() {
-        const select = document.getElementById('productStructure');
-        const otherSection = document.getElementById('otherProductStructureSection');
-        const otherInput = document.getElementById('otherProductStructure');
-        
-        if (select.value === 'other') {
-            otherSection.style.display = 'block';
-            otherInput.setAttribute('required', 'required');
-        } else {
-            otherSection.style.display = 'none';
-            otherInput.removeAttribute('required');
-            otherInput.value = '';
-        }
+    // 修改现有的 handleProductStructureChange 函数
+function handleProductStructureChange() {
+    const select = document.getElementById('productStructure');
+    const otherSection = document.getElementById('otherProductStructureSection');
+    const otherInput = document.getElementById('otherProductStructure');
+    const aLcmSection = document.getElementById('aLcmSection');
+    const aLcmDescription = document.getElementById('aLcmDescription');
+    
+    // 处理"其它"选项
+    if (select.value === 'other') {
+        otherSection.style.display = 'block';
+        otherInput.setAttribute('required', 'required');
+    } else {
+        otherSection.style.display = 'none';
+        otherInput.removeAttribute('required');
+        otherInput.value = '';
     }
+    
+    // 处理A-LCM选项（自动显示组合式总成）
+    if (select.value === 'a_lcm') {
+        aLcmSection.style.display = 'block';
+        aLcmDescription.setAttribute('required', 'required');
+    } else {
+        aLcmSection.style.display = 'none';
+        aLcmDescription.removeAttribute('required');
+        // 清空所有勾选和输入
+        document.querySelectorAll('input[name="aLcmComponents"]').forEach(cb => {
+            cb.checked = false;
+        });
+        document.getElementById('aLcmOtherComponent').value = '';
+        document.getElementById('aLcmDescription').value = '';
+    }
+}
+
+// 添加新的函数：A-LCM其它组件输入框切换
+function toggleOtherComponentInput() {
+    const otherCheckbox = document.querySelector('input[name="aLcmComponents"][value="other_component"]');
+    const otherInput = document.getElementById('otherComponentInput');
+    const otherTextField = document.getElementById('aLcmOtherComponent');
+    
+    if (otherCheckbox && otherCheckbox.checked) {
+        otherInput.style.display = 'block';
+        otherTextField.setAttribute('required', 'required');
+    } else {
+        otherInput.style.display = 'none';
+        otherTextField.removeAttribute('required');
+        otherTextField.value = '';
+    }
+}
 </script>
 <body><script src="form-enhancement.js"></script>
     <header>
