@@ -109,7 +109,7 @@
         <option value="tft_tn">TFT-LCD(TN)</option>
         <option value="tft_va">TFT-LCD(VA,MVA,PLS)</option>
         <option value="oled">OLED</option>
-        <option value="mono_lcd">MONO-LCD（单色液晶）</option>
+        <option value="stn_lcd">S/TN_LCD(被动型液晶显示)</option>
         <option value="e_paper">E-PAPER</option>
         <option value="other">其它</option>
     </select>
@@ -138,17 +138,75 @@
 <div class="form-section">
     <label for="productStructure">产品结构 *</label>
     <select id="productStructure" name="productStructure" required onchange="handleProductStructureChange()">
-        <option value="">请选择产品结构</option>
-        <option value="s_lcm">S-LCM（单模组，FOG+背光）</option>
-        <option value="t_lcm">T-LCM（TP/LENS+LCM）</option>
-        <option value="p_lcm">P-LCM（S-LCM+PCBA）</option>
-        <option value="a_lcm">A-LCM(总成，如LCM+盖板+PCBA)</option>
-        <option value="fog">FOG</option>
-        <option value="fob">FOB</option>
-        <option value="other">其它</option>
-    </select>
+    <option value="">请选择常见产品结构</option>
+    <option value="s_lcm">S-LCM（单模组，FOG+背光，可含铁框）</option>
+    <option value="t_lcm">T-LCM（TP/LENS+LCM）</option>
+    <option value="p_lcm">P-LCM（S-LCM+PCBA）</option>
+    <option value="a_lcm">A-LCM(总成，如LCM+盖板+PCBA)</option>
+    <option value="fog">FOG</option>
+    <option value="fob">FOB</option>
+    <option value="other">其它</option>
+</select>
 </div>
+<!-- 组合式总成A-LCM -->
+<div class="form-section a-lcm-section" id="aLcmSection" style="display: none;">
+    <div class="section-header">
+        <h3>组合式总成A-LCM</h3>
+        <p>您已选择A-LCM，请勾选相关组件并填写说明</p>
+    </div>
+    
+    <div class="checkbox-container">
+        <label class="section-title">请选择组合组件：</label>
+        <div class="checkbox-group">
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="cover_glass"> 
+                <span>盖板玻璃</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="touch_panel"> 
+                <span>触摸屏（TP）</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="frame"> 
+                <span>铁框</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="pcba"> 
+                <span>PCBA</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="backlight"> 
+                <span>背光</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="s_lcm"> 
+                <span>S-LCM</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="fog"> 
+                <span>FOG</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="fob"> 
+                <span>FOB</span>
+            </label>
+            <label class="checkbox-item">
+                <input type="checkbox" name="aLcmComponents" value="other_component" onchange="toggleOtherComponentInput()"> 
+                <span>其它</span>
+            </label>
+        </div>
+    </div>
 
+    <div id="otherComponentInput" style="display: none;" class="form-section">
+        <label for="aLcmOtherComponent">请填写其它组件 *</label>
+        <input type="text" id="aLcmOtherComponent" name="aLcmOtherComponent" placeholder="请输入其它组件名称">
+    </div>
+
+    <div class="form-section">
+        <label for="aLcmDescription">A-LCM组合说明 *</label>
+        <textarea id="aLcmDescription" name="aLcmDescription" rows="4" placeholder="请详细描述A-LCM的组合方式、规格要求、特殊要求等..."></textarea>
+    </div>
+</div>
 <!-- 当选择"其它"产品结构时显示的输入框 -->
 <div class="form-section" id="otherProductStructureSection" style="display: none;">
     <label for="otherProductStructure">请填写具体产品结构 *</label>
