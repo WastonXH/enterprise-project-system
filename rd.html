@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>研发部配置 - 触控及盖板方案</title>
+    <title>研发部工作台 - 完整版</title>
     <style>
         * {
             margin: 0;
@@ -89,6 +89,15 @@
         .input:focus {
             outline: none;
             border-color: #667eea;
+        }
+
+        .select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
         }
 
         .checkbox-group {
@@ -236,6 +245,44 @@
             line-height: 1.6;
         }
 
+        .info-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 6px;
+        }
+
+        .info-title {
+            font-weight: 600;
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .info-content {
+            color: #0d47a1;
+            line-height: 1.6;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .flex-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .flex-group .select {
+            flex: 1;
+        }
+
+        .flex-group .input {
+            flex: 2;
+        }
+
         @media (max-width: 768px) {
             .container {
                 margin: 10px;
@@ -246,23 +293,135 @@
             .content {
                 padding: 20px;
             }
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🔬 研发部配置</h1>
-            <p>触控及盖板方案配置系统</p>
+            <h1>🔬 研发部工作台</h1>
+            <p>设计方案与型号生成</p>
         </div>
 
         <div class="content">
-            <!-- 触摸屏方案选择 -->
+            <!-- 项目选择 -->
             <div class="section">
-                <h2 class="section-title">触摸屏方案选择</h2>
+                <h2 class="section-title">📋 选择项目需求</h2>
                 
                 <div class="form-group">
-                    <label class="label">请选择配置方式：</label>
+                    <label class="label">选择项目 <span style="color: red;">*</span></label>
+                    <select class="select" id="projectSelect">
+                        <option value="">请选择项目需求</option>
+                        <option value="1">客户A - TFT-LCD (10.1英寸)</option>
+                        <option value="2">客户B - OLED (7.0英寸)</option>
+                        <option value="3">客户C - S/TN_LCD (3.5英寸)</option>
+                    </select>
+                </div>
+
+                <div id="projectInfo" class="info-box hidden">
+                    <div class="info-title">项目信息</div>
+                    <div class="info-content" id="projectDetails"></div>
+                </div>
+            </div>
+
+            <!-- 核心组件选型 -->
+            <div class="section">
+                <h2 class="section-title">⚙️ 核心组件选型</h2>
+                <p style="margin-bottom: 15px; color: #666;">从采购部资源库中选择或手动输入玻璃、IC、偏光片型号（二选一）</p>
+                
+                <!-- 玻璃型号 -->
+                <div class="form-group">
+                    <label class="label">玻璃型号 <span style="color: red;">*</span></label>
+                    <div class="flex-group">
+                        <select class="select" id="glassSelect">
+                            <option value="">请选择玻璃</option>
+                            <option value="manual">手动输入</option>
+                            <option value="1">G-LCD10.1-01</option>
+                            <option value="2">G-LCD7.0-02</option>
+                            <option value="3">G-TFT3.5-03</option>
+                        </select>
+                        <input type="text" class="input" id="glassManualInput" placeholder="或输入玻璃型号">
+                    </div>
+                </div>
+
+                <!-- IC型号 -->
+                <div class="form-group">
+                    <label class="label">IC型号 <span style="color: red;">*</span></label>
+                    <div class="flex-group">
+                        <select class="select" id="icSelect">
+                            <option value="">请选择IC</option>
+                            <option value="manual">手动输入</option>
+                            <option value="1">IC-ILI9488</option>
+                            <option value="2">IC-SSD1963</option>
+                            <option value="3">IC-ST7789</option>
+                        </select>
+                        <input type="text" class="input" id="icManualInput" placeholder="或输入IC型号">
+                    </div>
+                </div>
+
+                <!-- 偏光片类型 -->
+                <div class="form-group">
+                    <label class="label">偏光片类型 <span style="color: red;">*</span></label>
+                    <div class="flex-group">
+                        <select class="select" id="polarizerSelect">
+                            <option value="">请选择偏光片类型</option>
+                            <option value="普通型">普通型</option>
+                            <option value="广视角型">广视角型</option>
+                            <option value="高对比度型">高对比度型</option>
+                            <option value="低反射型">低反射型</option>
+                            <option value="特殊应用型">特殊应用型</option>
+                        </select>
+                        <input type="text" class="input" id="polarizerManualInput" placeholder="或输入自定义偏光片">
+                    </div>
+                </div>
+
+                <!-- 产品型号预览 -->
+                <div id="modelPreview" class="info-box hidden">
+                    <div class="info-title">🎯 生成产品型号</div>
+                    <div class="info-content" style="font-size: 24px; font-weight: bold;" id="generatedModel"></div>
+                </div>
+            </div>
+
+            <!-- FPC和背光配置 -->
+            <div class="section">
+                <h2 class="section-title">🔌 FPC & 背光配置</h2>
+                
+                <!-- FPC配置 -->
+                <div class="form-group">
+                    <label class="label">FPC型号</label>
+                    <div class="flex-group">
+                        <input type="text" class="input" id="fpcModel" placeholder="请输入FPC型号" style="flex: 2;">
+                        <select class="select" id="fpcType" style="flex: 1;">
+                            <option value="">类型</option>
+                            <option value="共用型号">共用型号</option>
+                            <option value="新开">新开</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 背光配置 -->
+                <div class="form-group">
+                    <label class="label">背光型号</label>
+                    <div class="flex-group">
+                        <input type="text" class="input" id="backlightModel" placeholder="请输入背光型号" style="flex: 2;">
+                        <select class="select" id="backlightType" style="flex: 1;">
+                            <option value="">类型</option>
+                            <option value="共用型号">共用型号</option>
+                            <option value="新开">新开</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 触摸屏配置 -->
+            <div class="section">
+                <h2 class="section-title">📱 触控及盖板配置</h2>
+                
+                <div class="form-group">
+                    <label class="label">触摸屏方案选择</label>
                     <div class="radio-group" id="modeSelector">
                         <div class="radio-item selected" data-value="multi-select">
                             <input type="radio" name="touchscreenMode" value="multi-select" checked>
@@ -445,6 +604,70 @@
     </div>
 
     <script>
+        // 项目选择
+        const projectSelect = document.getElementById('projectSelect');
+        const projectInfo = document.getElementById('projectInfo');
+        const projectDetails = document.getElementById('projectDetails');
+
+        const projectData = {
+            '1': { customer: '客户A', category: 'TFT-LCD', size: '10.1英寸', level: 'S' },
+            '2': { customer: '客户B', category: 'OLED', size: '7.0英寸', level: 'A' },
+            '3': { customer: '客户C', category: 'S/TN_LCD', size: '3.5英寸', level: 'B' }
+        };
+
+        projectSelect.addEventListener('change', function() {
+            const projectId = this.value;
+            if (projectId && projectData[projectId]) {
+                const project = projectData[projectId];
+                projectDetails.innerHTML = `
+                    <div class="grid-2">
+                        <div><strong>客户:</strong> ${project.customer}</div>
+                        <div><strong>类别:</strong> ${project.category}</div>
+                        <div><strong>尺寸:</strong> ${project.size}</div>
+                        <div><strong>等级:</strong> ${project.level}</div>
+                    </div>
+                `;
+                projectInfo.classList.remove('hidden');
+                projectInfo.classList.add('show');
+            } else {
+                projectInfo.classList.add('hidden');
+            }
+            generateModel();
+        });
+
+        // 核心组件选择
+        const glassSelect = document.getElementById('glassSelect');
+        const glassManualInput = document.getElementById('glassManualInput');
+        const icSelect = document.getElementById('icSelect');
+        const icManualInput = document.getElementById('icManualInput');
+        const modelPreview = document.getElementById('modelPreview');
+        const generatedModel = document.getElementById('generatedModel');
+
+        function generateModel() {
+            const projectId = projectSelect.value;
+            const glassCode = glassSelect.value === 'manual' ? glassManualInput.value : 
+                             (glassSelect.value ? (glassSelect.options[glassSelect.selectedIndex].text.split('-')[1] || '') : '');
+            const icCode = icSelect.value === 'manual' ? icManualInput.value : 
+                          (icSelect.value ? (icSelect.options[icSelect.selectedIndex].text.split('-')[1] || '') : '');
+
+            if (projectId && (glassCode || (glassSelect.value === 'manual' && glassManualInput.value)) && 
+                (icCode || (icSelect.value === 'manual' && icManualInput.value))) {
+                const project = projectData[projectId];
+                const category = project.category.replace('-', '');
+                const model = `LCM-${category}-${project.size}-${glassCode || glassManualInput.value}-${icCode || icManualInput.value}`;
+                generatedModel.textContent = model;
+                modelPreview.classList.remove('hidden');
+                modelPreview.classList.add('show');
+            } else {
+                modelPreview.classList.add('hidden');
+            }
+        }
+
+        glassSelect.addEventListener('change', generateModel);
+        glassManualInput.addEventListener('input', generateModel);
+        icSelect.addEventListener('change', generateModel);
+        icManualInput.addEventListener('input', generateModel);
+
         // 模式切换逻辑
         const modeSelector = document.getElementById('modeSelector');
         const resistiveSection = document.getElementById('resistiveSection');
@@ -454,13 +677,11 @@
             const radioItem = e.target.closest('.radio-item');
             if (!radioItem) return;
 
-            // 更新选中状态
             document.querySelectorAll('#modeSelector .radio-item').forEach(item => {
                 item.classList.remove('selected');
             });
             radioItem.classList.add('selected');
 
-            // 显示/隐藏对应区域
             const mode = radioItem.dataset.value;
             if (mode === 'resistive') {
                 resistiveSection.classList.remove('hidden');
@@ -485,7 +706,6 @@
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
 
-            // 显示/隐藏盖板规格
             if (selectedTypes.includes('盖板规格')) {
                 coverSpecSection.classList.remove('hidden');
                 coverSpecSection.classList.add('show');
@@ -494,7 +714,6 @@
                 coverSpecSection.classList.remove('show');
             }
 
-            // 显示/隐藏电容触控IC方案
             if (selectedTypes.includes('电容触控IC 方案')) {
                 capacitiveSection.classList.remove('hidden');
                 capacitiveSection.classList.add('show');
@@ -573,22 +792,47 @@
             const resultBox = document.getElementById('resultBox');
             const resultContent = document.getElementById('resultContent');
             
-            // 获取选中的模式
-            const mode = document.querySelector('input[name="touchscreenMode"]:checked').value;
+            // 获取选中的项目
+            const projectId = projectSelect.value;
+            const project = projectData[projectId];
             
-            let config = '';
+            let config = `<strong>📋 项目信息：</strong><br>`;
+            config += `客户：${project ? project.customer : '未选择'}<br>`;
+            config += `类别：${project ? project.category : '未选择'}<br>`;
+            config += `尺寸：${project ? project.size : '未选择'}<br><br>`;
 
+            // 获取核心组件
+            const glassModel = glassSelect.value === 'manual' ? glassManualInput.value : 
+                              (glassSelect.value ? glassSelect.options[glassSelect.selectedIndex].text : '');
+            const icModel = icSelect.value === 'manual' ? icManualInput.value : 
+                          (icSelect.value ? icSelect.options[icSelect.selectedIndex].text : '');
+            
+            config += `<strong>⚙️ 核心组件：</strong><br>`;
+            config += `玻璃型号：${glassModel || '未填写'}<br>`;
+            config += `IC型号：${icModel || '未填写'}<br>`;
+            config += `偏光片：${document.getElementById('polarizerSelect').value || document.getElementById('polarizerManualInput').value || '未填写'}<br><br>`;
+
+            // FPC和背光
+            config += `<strong>🔌 FPC & 背光：</strong><br>`;
+            config += `FPC型号：${document.getElementById('fpcModel').value || '未填写'}<br>`;
+            config += `FPC类型：${document.getElementById('fpcType').value || '未选择'}<br>`;
+            config += `背光型号：${document.getElementById('backlightModel').value || '未填写'}<br>`;
+            config += `背光类型：${document.getElementById('backlightType').value || '未选择'}<br><br>`;
+
+            // 触摸屏配置
+            const mode = document.querySelector('input[name="touchscreenMode"]:checked').value;
+            config += `<strong>📱 触摸屏配置：</strong><br>`;
+            
             if (mode === 'resistive') {
                 const resistiveModel = document.getElementById('resistiveModel').value;
-                config += `<strong>方案类型：</strong> 电阻触摸屏型号（填写）<br>`;
-                config += `<strong>电阻触摸屏型号：</strong> ${resistiveModel || '未填写'}<br>`;
+                config += `方案类型：电阻触摸屏型号（填写）<br>`;
+                config += `电阻触摸屏型号：${resistiveModel || '未填写'}<br>`;
             } else {
-                config += `<strong>方案类型：</strong> 触控/盖板方案（多选）<br>`;
+                config += `方案类型：触控/盖板方案（多选）<br>`;
                 
-                // 获取选中的触控/盖板方案
                 const selectedTypes = Array.from(document.querySelectorAll('input[name="touchscreenType"]:checked'))
                     .map(cb => cb.value);
-                config += `<strong>已选方案：</strong> ${selectedTypes.join(', ') || '无'}<br><br>`;
+                config += `已选方案：${selectedTypes.join(', ') || '无'}<br><br>`;
 
                 // 盖板规格
                 if (selectedTypes.includes('盖板规格')) {
@@ -638,10 +882,14 @@
                 }
             }
 
+            // 产品型号
+            if (modelPreview.classList.contains('show')) {
+                config += `<br><strong>🎯 生成产品型号：</strong><br>${generatedModel.textContent}<br>`;
+            }
+
             resultContent.innerHTML = config;
             resultBox.classList.add('show');
             
-            // 滚动到结果区域
             resultBox.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
