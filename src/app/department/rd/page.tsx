@@ -1,846 +1,400 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Save, Cpu, Layers } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
 
-// 偏光片类型（5个选项）
-const POLARIZER_TYPES = [
-  '普通型',
-  '广视角型',
-  '高对比度型',
-  '低反射型',
-  '特殊应用型',
-] as const;
-
-// FPC/背光类型
-const TYPE_OPTIONS = ['共用型号', '新开'] as const;
-
-// 触摸屏类型
-const TOUCHSCREEN_TYPES = ['盖板规格', '电容触控IC 方案'] as const;
-
-// 触摸屏模式
-const TOUCHSCREEN_MODES = ['触控/盖板方案（多选）', '电阻触摸屏型号（填写）'] as const;
-
-// 电容屏触控IC特性
-const CAPACITIVE_FEATURES = ['触控IC (填写)', '防水', '手套', '主/被动笔', '触控点数（填写）', '其它'] as const;
-
-// 盖板材质和结构
-const COVER_MATERIALS = ['GG', 'GFF', 'OGS', '其它'] as const;
-
-// 盖板及表面处理
-const SURFACE_TREATMENTS = ['AG', 'AR', 'AF', '抗UV', '其它（填写）'] as const;
-
-// 特殊要求
-const SPECIAL_REQUIREMENTS = ['连接器型号及品牌', '其它'] as const;
-
-// 项目需求接口
-interface ProjectRequirement {
-  id: number;
-  businessGroup: string;
-  customerName: string;
-  productCategory: string;
-  size: string | null;
-  resolution: string | null;
-  projectLevel: string;
-}
-
-// 玻璃资源接口
-interface GlassResource {
-  id: number;
-  modelNumber: string;
-  manufacturer: string | null;
-}
-
-// IC资源接口
-interface ICResource {
-  id: number;
-  modelNumber: string;
-  manufacturer: string | null;
-}
-
-export default function RDDepartmentPage() {
-  const [mounted, setMounted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 资源数据
-  const [projects, setProjects] = useState<ProjectRequirement[]>([]);
-  const [glassResources, setGlassResources] = useState<GlassResource[]>([]);
-  const [icResources, setIcResources] = useState<ICResource[]>([]);
-
-  // 表单数据
+export default function RDPage() {
   const [formData, setFormData] = useState({
-    projectId: '',
-    // 核心组件 - 玻璃
-    glassModelId: '',
-    glassManualInput: '',
-    // 核心组件 - IC
-    icModelId: '',
-    icManualInput: '',
-    // 核心组件 - 偏光片
+    // 基本配置
+    projectCode: '',
+    productStructure: '',
+    
+    // 玻璃配置
+    glassSize: '',
+    glassThickness: '',
+    
+    // IC配置
+    icModel: '',
+    icPackage: '',
+    
+    // 偏光片配置
     polarizerType: '',
-    polarizerManualInput: '',
+    polarizerBrand: '',
+    
     // FPC配置
-    fpcModel: '',
     fpcType: '',
+    fpcLength: '',
+    fpcConnector: '',
+    
     // 背光配置
-    backlightModel: '',
     backlightType: '',
-    // 触摸屏配置
-    touchscreenType: [] as string[],
-    touchscreenMode: 'multi-select', // 'multi-select' 或 'resistive'
-    // 电阻屏字段
-    resistiveModel: '',
-    resistiveType: '',
-    // 电容屏 - 触控IC
-    capacitiveTouchIC: '',
-    capacitiveTouchFeatures: [] as string[],
-    capacitiveTouchFeatureOther: '',
-    capacitiveTouchPoints: '',
-    // 盖板规格 - 盖板材质和结构
-    coverMaterial: '',
-    coverMaterialOther: '',
-    // 盖板规格 - 盖板及表面处理
-    coverThickness: '',
-    coverSurfaceTreatments: [] as string[],
-    coverSurfaceTreatmentOther: '',
-    // 电容屏 - 特殊要求
-    capacitiveSpecialRequirements: [] as string[],
-    capacitiveConnectorModel: '',
-    capacitiveSpecialOther: '',
+    backlightBrightness: '',
+    
+    // 触控配置
+    touchType: '',
+    coverGlass: '',
+    
+    // 备注
+    remarks: ''
   });
 
-  // 生成产品型号
-  const [generatedModel, setGeneratedModel] = useState('');
+  const [modelNumber, setModelNumber] = useState('');
 
-  useEffect(() => {
-    setMounted(true);
-    loadResources();
-  }, []);
-
-  const loadResources = async () => {
-    try {
-      // 加载项目需求
-      const projRes = await fetch('/api/project-requirements');
-      if (projRes.ok) {
-        const projData = await projRes.json();
-        setProjects(projData.requirements || []);
-      }
-
-      // 加载玻璃资源
-      const glassRes = await fetch('/api/resources/glass');
-      if (glassRes.ok) {
-        const glassData = await glassRes.json();
-        setGlassResources(glassData.resources || []);
-      }
-
-      // 加载IC资源
-      const icRes = await fetch('/api/resources/ic');
-      if (icRes.ok) {
-        const icData = await icRes.json();
-        setIcResources(icData.resources || []);
-      }
-    } catch (error) {
-      console.error('加载资源失败:', error);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const generateProductModel = () => {
-    const project = projects.find(p => p.id === parseInt(formData.projectId));
-
-    if (!project) {
-      return '';
+  const generateModelNumber = () => {
+    const parts = [];
+    
+    // 产品结构
+    if (formData.productStructure) {
+      parts.push(formData.productStructure);
     }
-
-    // 获取玻璃型号（下拉选择或手动输入）
-    let glassCode = '';
-    if (formData.glassModelId && formData.glassModelId !== 'manual') {
-      const glass = glassResources.find(g => g.id === parseInt(formData.glassModelId));
-      glassCode = glass?.modelNumber.split('-').pop() || '';
-    } else if (formData.glassManualInput) {
-      glassCode = formData.glassManualInput;
+    
+    // 尺寸
+    if (formData.glassSize) {
+      parts.push(formData.glassSize.replace(/[^0-9.]/g, ''));
     }
-
-    // 获取IC型号（下拉选择或手动输入）
-    let icCode = '';
-    if (formData.icModelId && formData.icModelId !== 'manual') {
-      const ic = icResources.find(i => i.id === parseInt(formData.icModelId));
-      icCode = ic?.modelNumber.split('-').pop() || '';
-    } else if (formData.icManualInput) {
-      icCode = formData.icManualInput;
+    
+    // IC型号
+    if (formData.icModel) {
+      parts.push(formData.icModel.substring(0, 3).toUpperCase());
     }
-
-    if (!glassCode || !icCode) {
-      return '';
+    
+    // 触控类型
+    if (formData.touchType) {
+      const touchMap: Record<string, string> = {
+        'CTP': 'C',
+        'RTP': 'R',
+        'NONE': 'N'
+      };
+      parts.push(touchMap[formData.touchType] || 'X');
     }
-
-    // 产品型号格式: 产品类别-尺寸-玻璃型号-IC型号-序号
-    const size = project.size || 'XX';
-    const category = project.productCategory.replace('-', '');
-    const model = `LCM-${category}-${size}-${glassCode}-${icCode}`;
-
-    setGeneratedModel(model);
-    return model;
+    
+    // 随机序号
+    const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+    parts.push(random);
+    
+    const model = parts.length > 1 ? parts.join('-') : `MODEL-${random}`;
+    setModelNumber(model);
   };
 
-  useEffect(() => {
-    if (formData.projectId && (formData.glassModelId || formData.glassManualInput) && (formData.icModelId || formData.icManualInput)) {
-      generateProductModel();
-    }
-  }, [formData.projectId, formData.glassModelId, formData.glassManualInput, formData.icModelId, formData.icManualInput]);
-
-  const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleMultiSelectChange = (field: string, value: string, checked: boolean) => {
-    setFormData(prev => {
-      const currentArray = (prev as any)[field] as string[];
-      if (checked) {
-        return {
-          ...prev,
-          [field]: [...currentArray, value],
-        };
-      } else {
-        return {
-          ...prev,
-          [field]: currentArray.filter(item => item !== value),
-        };
-      }
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 基本验证
-    if (!formData.projectId || (!formData.glassModelId && !formData.glassManualInput) || (!formData.icModelId && !formData.icManualInput)) {
-      toast.error('请选择项目，并提供玻璃型号和IC型号（下拉选择或手动输入）');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/design-solutions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          productModel: generatedModel,
-          capacitiveTouchPoints: formData.capacitiveTouchPoints ? parseInt(formData.capacitiveTouchPoints) : null,
-        }),
-      });
-
-      if (!response.ok) throw new Error('提交失败');
-
-      toast.success('设计方案保存成功！', {
-        description: `产品型号: ${generatedModel}`,
-      });
-
-      // 重置表单
-      setFormData({
-        projectId: '',
-        glassModelId: '',
-        glassManualInput: '',
-        icModelId: '',
-        icManualInput: '',
-        polarizerType: '',
-        polarizerManualInput: '',
-        fpcModel: '',
-        fpcType: '',
-        backlightModel: '',
-        backlightType: '',
-        touchscreenType: [],
-        touchscreenMode: 'multi-select',
-        resistiveModel: '',
-        resistiveType: '',
-        capacitiveTouchIC: '',
-        capacitiveTouchFeatures: [],
-        capacitiveTouchFeatureOther: '',
-        capacitiveTouchPoints: '',
-        coverMaterial: '',
-        coverMaterialOther: '',
-        coverThickness: '',
-        coverSurfaceTreatments: [],
-        coverSurfaceTreatmentOther: '',
-        capacitiveSpecialRequirements: [],
-        capacitiveConnectorModel: '',
-        capacitiveSpecialOther: '',
-      });
-      setGeneratedModel('');
-    } catch (error) {
-      console.error('提交失败:', error);
-      toast.error('提交失败，请重试');
-    } finally {
-      setIsSubmitting(false);
-    }
+    alert('设计方案提交成功！\n\n产品型号：' + modelNumber + '\n\n（注意：这是静态演示版本，数据不会保存）');
   };
-
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  const selectedProject = projects.find(p => p.id === parseInt(formData.projectId));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-violet-50 to-indigo-50">
-      {/* 顶部导航 */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                返回首页
-              </Button>
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <Cpu className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-900">研发部工作台</h1>
-                <p className="text-sm text-slate-500">设计方案与型号生成</p>
-              </div>
+    <div>
+      <header className="header no-print">
+        <div className="container">
+          <div className="header-content">
+            <div className="logo">🔬</div>
+            <div>
+              <h1>研发部工作台</h1>
+              <p style={{ fontSize: '14px', opacity: 0.9 }}>设计方案配置</p>
             </div>
           </div>
+          <nav className="nav">
+            <Link href="/">返回首页</Link>
+          </nav>
         </div>
       </header>
 
-      {/* 主内容区 */}
-      <main className="container mx-auto px-4 py-8 max-w-6xl">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* 项目选择 */}
-          <Card className="border-2 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-              <CardTitle className="text-2xl flex items-center gap-3">
-                <Layers className="h-6 w-6" />
-                选择项目需求
-              </CardTitle>
-              <CardDescription className="text-purple-100 text-base">
-                选择业务部提交的项目需求，基于此进行方案设计
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                <Label htmlFor="project" className="text-base font-medium">
-                  选择项目 <span className="text-red-500">*</span>
-                </Label>
-                <Select value={formData.projectId} onValueChange={(v) => handleInputChange('projectId', v)}>
-                  <SelectTrigger id="project">
-                    <SelectValue placeholder="请选择项目需求" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.length === 0 ? (
-                      <div className="p-2 text-sm text-slate-500">暂无项目需求</div>
-                    ) : (
-                      projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id.toString()}>
-                          {project.customerName} - {project.productCategory} ({project.size || '未指定尺寸'})
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {selectedProject && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                    <h4 className="font-medium text-slate-900 mb-2">项目信息</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <div><span className="text-slate-600">客户:</span> {selectedProject.customerName}</div>
-                      <div><span className="text-slate-600">类别:</span> {selectedProject.productCategory}</div>
-                      <div><span className="text-slate-600">尺寸:</span> {selectedProject.size || '-'}</div>
-                      <div><span className="text-slate-600">等级:</span> {selectedProject.projectLevel}</div>
-                    </div>
-                  </div>
-                )}
+      <main className="container" style={{ paddingTop: '30px' }}>
+        <div className="card no-print">
+          <div className="card-header">设计方案配置表</div>
+          
+          <form onSubmit={handleSubmit}>
+            {/* 型号生成 */}
+            <div className="card" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', marginBottom: '20px', color: 'white' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>产品型号生成</div>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  value={modelNumber}
+                  readOnly
+                  placeholder="配置完成后点击生成"
+                  style={{ background: 'rgba(255,255,255,0.9)', flex: 1 }}
+                />
+                <button type="button" className="btn" style={{ background: 'white', color: '#667eea' }} onClick={generateModelNumber}>
+                  生成型号
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* 核心组件选型 */}
-          <Card className="border-2 shadow-xl">
-            <CardHeader className="bg-gradient-to-r from-violet-500 to-violet-600 text-white">
-              <CardTitle className="text-2xl">核心组件选型</CardTitle>
-              <CardDescription className="text-violet-100 text-base">
-                从采购部资源库中选择或手动输入玻璃、IC、偏光片型号（二选一）
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-8">
-                {/* 玻璃型号 */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">玻璃型号 <span className="text-red-500">*</span></Label>
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.glassModelId}
-                      onValueChange={(v) => {
-                        handleInputChange('glassModelId', v);
-                        if (v !== 'manual') {
-                          handleInputChange('glassManualInput', '');
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="请选择玻璃型号" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="manual">手动输入</SelectItem>
-                        {glassResources.map((glass) => (
-                          <SelectItem key={glass.id} value={glass.id.toString()}>
-                            {glass.modelNumber} ({glass.manufacturer || '未知厂家'})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      placeholder="或手动输入玻璃型号"
-                      value={formData.glassManualInput}
-                      onChange={(e) => {
-                        handleInputChange('glassManualInput', e.target.value);
-                        handleInputChange('glassModelId', 'manual');
-                      }}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                {/* IC型号 */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">IC型号 <span className="text-red-500">*</span></Label>
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.icModelId}
-                      onValueChange={(v) => {
-                        handleInputChange('icModelId', v);
-                        if (v !== 'manual') {
-                          handleInputChange('icManualInput', '');
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="请选择IC型号" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="manual">手动输入</SelectItem>
-                        {icResources.map((ic) => (
-                          <SelectItem key={ic.id} value={ic.id.toString()}>
-                            {ic.modelNumber} ({ic.manufacturer || '未知厂家'})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      placeholder="或手动输入IC型号"
-                      value={formData.icManualInput}
-                      onChange={(e) => {
-                        handleInputChange('icManualInput', e.target.value);
-                        handleInputChange('icModelId', 'manual');
-                      }}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-
-                {/* 偏光片类型 */}
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">偏光片类型</Label>
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.polarizerType}
-                      onValueChange={(v) => {
-                        handleInputChange('polarizerType', v);
-                        if (v !== 'manual') {
-                          handleInputChange('polarizerManualInput', '');
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="请选择偏光片类型" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="manual">手动输入</SelectItem>
-                        {POLARIZER_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      placeholder="或手动输入偏光片型号"
-                      value={formData.polarizerManualInput}
-                      onChange={(e) => {
-                        handleInputChange('polarizerManualInput', e.target.value);
-                        handleInputChange('polarizerType', 'manual');
-                      }}
-                      className="flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* 产品型号生成结果 */}
-              {generatedModel && (
-                <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-                  <h4 className="font-medium text-slate-900 mb-2 flex items-center gap-2">
-                    <Cpu className="h-5 w-5 text-green-600" />
-                    生成的产品型号
-                  </h4>
-                  <div className="text-2xl font-bold text-green-700">{generatedModel}</div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* FPC和背光配置 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>FPC和背光配置</CardTitle>
-              <CardDescription>配置FPC和背光方案</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* FPC配置 */}
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">FPC型号</Label>
-                  <Input
-                    placeholder="输入FPC型号"
-                    value={formData.fpcModel}
-                    onChange={(e) => handleInputChange('fpcModel', e.target.value)}
+            {/* 产品结构 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>产品结构</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">项目编号</label>
+                  <input 
+                    type="text" 
+                    name="projectCode"
+                    className="form-input" 
+                    value={formData.projectCode}
+                    onChange={handleChange}
+                    placeholder="请输入项目编号"
                   />
-                  <div>
-                    <Label className="text-sm font-medium">类型</Label>
-                    <RadioGroup
-                      value={formData.fpcType}
-                      onValueChange={(v) => handleInputChange('fpcType', v)}
-                      className="mt-2"
-                    >
-                      {TYPE_OPTIONS.map((option) => (
-                        <div key={option} className="flex items-center space-x-2">
-                          <RadioGroupItem value={option} id={`fpc-${option}`} />
-                          <Label htmlFor={`fpc-${option}`}>{option}</Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
                 </div>
-
-                {/* 背光配置 */}
-                <div className="space-y-4">
-                  <Label className="text-base font-medium">背光型号</Label>
-                  <Input
-                    placeholder="输入背光型号"
-                    value={formData.backlightModel}
-                    onChange={(e) => handleInputChange('backlightModel', e.target.value)}
-                  />
-                  <div>
-                    <Label className="text-sm font-medium">类型</Label>
-                    <RadioGroup
-                      value={formData.backlightType}
-                      onValueChange={(v) => handleInputChange('backlightType', v)}
-                      className="mt-2"
-                    >
-                      {TYPE_OPTIONS.map((option) => (
-                        <div key={option} className="flex items-center space-x-2">
-                          <RadioGroupItem value={option} id={`backlight-${option}`} />
-                          <Label htmlFor={`backlight-${option}`}>{option}</Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 触摸屏配置 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>触控及盖板配置</CardTitle>
-              <CardDescription>选择触控或盖板类型并配置相关参数</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <Label className="text-base font-medium">触摸屏方案选择</Label>
-                  <RadioGroup
-                    value={formData.touchscreenMode}
-                    onValueChange={(v) => {
-                      handleInputChange('touchscreenMode', v);
-                      // 切换模式时清空相关数据
-                      if (v === 'multi-select') {
-                        handleInputChange('touchscreenType', []);
-                        handleInputChange('resistiveModel', '');
-                      } else {
-                        handleInputChange('touchscreenType', []);
-                        handleInputChange('resistiveModel', '');
-                      }
-                    }}
-                    className="mt-2"
+                <div className="form-group">
+                  <label className="form-label">产品结构类型</label>
+                  <select 
+                    name="productStructure"
+                    className="form-select" 
+                    value={formData.productStructure}
+                    onChange={handleChange}
                   >
-                    {TOUCHSCREEN_MODES.map((mode) => (
-                      <div key={mode} className="flex items-center space-x-2">
-                        <RadioGroupItem value={mode === '触控/盖板方案（多选）' ? 'multi-select' : 'resistive'} id={`mode-${mode}`} />
-                        <Label htmlFor={`mode-${mode}`} className="text-sm">{mode}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                    <option value="">请选择</option>
+                    <option value="COG">COG (Chip on Glass)</option>
+                    <option value="COF">COF (Chip on Film)</option>
+                    <option value="COA">COA (Chip on Array)</option>
+                    <option value="A-LCM">A-LCM (组合式总成)</option>
+                  </select>
                 </div>
-
-                {/* 电阻触摸屏型号 */}
-                {formData.touchscreenMode === 'resistive' && (
-                  <div className="p-4 bg-slate-50 rounded-lg">
-                    <Label className="text-base font-medium">电阻触摸屏型号</Label>
-                    <Input
-                      placeholder="请输入电阻触摸屏型号"
-                      value={formData.resistiveModel}
-                      onChange={(e) => handleInputChange('resistiveModel', e.target.value)}
-                      className="mt-2"
-                    />
-                  </div>
-                )}
-
-                {/* 触控/盖板方案（多选） */}
-                {formData.touchscreenMode === 'multi-select' && (
-                  <>
-                    <div>
-                      <Label className="text-base font-medium">触控/盖板方案（多选）</Label>
-                      <div className="mt-2 space-y-2">
-                        {TOUCHSCREEN_TYPES.map((type) => (
-                          <div key={type} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`touch-${type}`}
-                              checked={formData.touchscreenType.includes(type)}
-                              onCheckedChange={(checked) => handleMultiSelectChange('touchscreenType', type, checked === true)}
-                            />
-                            <Label htmlFor={`touch-${type}`} className="text-sm">{type}</Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                {/* 盖板规格配置 */}
-                {formData.touchscreenType.includes('盖板规格') && (
-                  <div className="p-4 bg-slate-50 rounded-lg space-y-6">
-                    {/* a. 盖板材质和结构 */}
-                    <div>
-                      <Label className="text-base font-medium">a. 盖板材质和结构</Label>
-                      <div className="mt-2">
-                        <RadioGroup
-                          value={formData.coverMaterial}
-                          onValueChange={(v) => {
-                            handleInputChange('coverMaterial', v);
-                            if (v !== '其它') handleInputChange('coverMaterialOther', '');
-                          }}
-                        >
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                            {COVER_MATERIALS.map((material) => (
-                              <div key={material} className="flex items-center space-x-2">
-                                <RadioGroupItem value={material} id={`cover-material-${material}`} />
-                                <Label htmlFor={`cover-material-${material}`} className="text-sm">{material}</Label>
-                              </div>
-                            ))}
-                          </div>
-                        </RadioGroup>
-                      </div>
-                      {formData.coverMaterial === '其它' && (
-                        <Input
-                          placeholder="请说明"
-                          value={formData.coverMaterialOther}
-                          onChange={(e) => handleInputChange('coverMaterialOther', e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
-                    </div>
-
-                    {/* b. 盖板及表面处理 */}
-                    <div>
-                      <Label className="text-base font-medium">b. 盖板及表面处理</Label>
-                      <div className="mt-2 space-y-3">
-                        <div className="flex items-center gap-4">
-                          <Label className="text-sm whitespace-nowrap">厚度</Label>
-                          <Input
-                            type="number"
-                            step="0.1"
-                            placeholder="例如：0.7"
-                            value={formData.coverThickness}
-                            onChange={(e) => handleInputChange('coverThickness', e.target.value)}
-                            className="w-24"
-                          />
-                          <span className="text-sm text-slate-600">mm</span>
-                        </div>
-                        <div className="flex flex-wrap gap-4">
-                          {SURFACE_TREATMENTS.map((treatment) => (
-                            <div key={treatment} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`cover-treatment-${treatment}`}
-                                checked={formData.coverSurfaceTreatments.includes(treatment)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    handleInputChange('coverSurfaceTreatments', [...formData.coverSurfaceTreatments, treatment]);
-                                  } else {
-                                    handleInputChange('coverSurfaceTreatments', formData.coverSurfaceTreatments.filter(t => t !== treatment));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor={`cover-treatment-${treatment}`} className="text-sm">{treatment}</Label>
-                            </div>
-                          ))}
-                        </div>
-                        {formData.coverSurfaceTreatments.includes('其它（填写）') && (
-                          <Input
-                            placeholder="请说明"
-                            value={formData.coverSurfaceTreatmentOther}
-                            onChange={(e) => handleInputChange('coverSurfaceTreatmentOther', e.target.value)}
-                            className="mt-2"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 触控IC方案配置 */}
-                {formData.touchscreenType.includes('电容触控IC 方案') && (
-                  <div className="p-4 bg-slate-50 rounded-lg space-y-6">
-                    {/* a. 触控IC特性 */}
-                    <div>
-                      <Label className="text-base font-medium">a. 触控IC特性</Label>
-                      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {CAPACITIVE_FEATURES.map((feature) => (
-                          <div key={feature} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`feature-${feature}`}
-                              checked={formData.capacitiveTouchFeatures.includes(feature)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  handleInputChange('capacitiveTouchFeatures', [...formData.capacitiveTouchFeatures, feature]);
-                                } else {
-                                  handleInputChange('capacitiveTouchFeatures', formData.capacitiveTouchFeatures.filter(f => f !== feature));
-                                }
-                              }}
-                            />
-                            <Label htmlFor={`feature-${feature}`} className="text-sm">{feature}</Label>
-                          </div>
-                        ))}
-                      </div>
-                      {formData.capacitiveTouchFeatures.includes('触控IC (填写)') && (
-                        <Input
-                          placeholder="请输入触控IC型号"
-                          value={formData.capacitiveTouchIC}
-                          onChange={(e) => handleInputChange('capacitiveTouchIC', e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
-                      {formData.capacitiveTouchFeatures.includes('触控点数（填写）') && (
-                        <Input
-                          type="number"
-                          placeholder="例如：10"
-                          value={formData.capacitiveTouchPoints}
-                          onChange={(e) => handleInputChange('capacitiveTouchPoints', e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
-                      {formData.capacitiveTouchFeatures.includes('其它') && (
-                        <Input
-                          placeholder="请说明"
-                          value={formData.capacitiveTouchFeatureOther}
-                          onChange={(e) => handleInputChange('capacitiveTouchFeatureOther', e.target.value)}
-                          className="mt-2"
-                        />
-                      )}
-                    </div>
-
-                    {/* b. 特殊要求 */}
-                    <div>
-                      <Label className="text-base font-medium">b. 特殊要求</Label>
-                      <div className="mt-2 space-y-3">
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {SPECIAL_REQUIREMENTS.map((req) => (
-                            <div key={req} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`special-${req}`}
-                                checked={formData.capacitiveSpecialRequirements.includes(req)}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    handleInputChange('capacitiveSpecialRequirements', [...formData.capacitiveSpecialRequirements, req]);
-                                  } else {
-                                    handleInputChange('capacitiveSpecialRequirements', formData.capacitiveSpecialRequirements.filter(r => r !== req));
-                                  }
-                                }}
-                              />
-                              <Label htmlFor={`special-${req}`} className="text-sm">{req}</Label>
-                            </div>
-                          ))}
-                        </div>
-                        {formData.capacitiveSpecialRequirements.includes('连接器型号及品牌') && (
-                          <Input
-                            placeholder="请输入连接器型号及品牌"
-                            value={formData.capacitiveConnectorModel}
-                            onChange={(e) => handleInputChange('capacitiveConnectorModel', e.target.value)}
-                            className="mt-2"
-                          />
-                        )}
-                        {formData.capacitiveSpecialRequirements.includes('其它') && (
-                          <Textarea
-                            placeholder="请说明"
-                            value={formData.capacitiveSpecialOther}
-                            onChange={(e) => handleInputChange('capacitiveSpecialOther', e.target.value)}
-                            rows={3}
-                            className="mt-2"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                </>
-                )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* 提交按钮 */}
-          <div className="flex justify-end gap-4 pt-6 border-t">
-            <Link href="/">
-              <Button variant="outline" type="button">
-                取消
-              </Button>
-            </Link>
-            <Button
-              type="submit"
-              disabled={isSubmitting}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  保存中...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  保存设计方案
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+            {/* 玻璃配置 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>🔧 玻璃配置</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">玻璃尺寸</label>
+                  <input 
+                    type="text" 
+                    name="glassSize"
+                    className="form-input" 
+                    value={formData.glassSize}
+                    onChange={handleChange}
+                    placeholder="例如：7.0 inch"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">玻璃厚度</label>
+                  <select 
+                    name="glassThickness"
+                    className="form-select" 
+                    value={formData.glassThickness}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="0.3mm">0.3mm</option>
+                    <option value="0.4mm">0.4mm</option>
+                    <option value="0.5mm">0.5mm</option>
+                    <option value="0.55mm">0.55mm</option>
+                    <option value="0.7mm">0.7mm</option>
+                    <option value="1.1mm">1.1mm</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* IC配置 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>🔌 IC配置</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">IC型号</label>
+                  <input 
+                    type="text" 
+                    name="icModel"
+                    className="form-input" 
+                    value={formData.icModel}
+                    onChange={handleChange}
+                    placeholder="例如：ILI9341"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">封装类型</label>
+                  <select 
+                    name="icPackage"
+                    className="form-select" 
+                    value={formData.icPackage}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="COG">COG</option>
+                    <option value="COF">COF</option>
+                    <option value="TCP">TCP</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 偏光片配置 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>🎨 偏光片配置</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">偏光片类型</label>
+                  <select 
+                    name="polarizerType"
+                    className="form-select" 
+                    value={formData.polarizerType}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="Normal">普通</option>
+                    <option value="Wide">广视角</option>
+                    <option value="Narrow">窄视角</option>
+                    <option value="Anti-glare">防眩光</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">品牌</label>
+                  <input 
+                    type="text" 
+                    name="polarizerBrand"
+                    className="form-input" 
+                    value={formData.polarizerBrand}
+                    onChange={handleChange}
+                    placeholder="例如：Sumitomo"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* FPC配置 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>📶 FPC配置</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">FPC类型</label>
+                  <select 
+                    name="fpcType"
+                    className="form-select" 
+                    value={formData.fpcType}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="Single-side">单面</option>
+                    <option value="Double-side">双面</option>
+                    <option value="Multi-layer">多层</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">FPC长度</label>
+                  <input 
+                    type="text" 
+                    name="fpcLength"
+                    className="form-input" 
+                    value={formData.fpcLength}
+                    onChange={handleChange}
+                    placeholder="例如：50mm"
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">连接器类型</label>
+                  <input 
+                    type="text" 
+                    name="fpcConnector"
+                    className="form-input" 
+                    value={formData.fpcConnector}
+                    onChange={handleChange}
+                    placeholder="例如：PH 2.0"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 背光配置 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>💡 背光配置</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">背光类型</label>
+                  <select 
+                    name="backlightType"
+                    className="form-select" 
+                    value={formData.backlightType}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="LED">LED</option>
+                    <option value="CCFL">CCFL</option>
+                    <option value="EL">EL</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">亮度要求</label>
+                  <input 
+                    type="text" 
+                    name="backlightBrightness"
+                    className="form-input" 
+                    value={formData.backlightBrightness}
+                    onChange={handleChange}
+                    placeholder="例如：500 nits"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 触控配置 */}
+            <div className="card" style={{ background: '#f8f9fa', marginBottom: '20px' }}>
+              <div style={{ fontWeight: '600', marginBottom: '16px' }}>👆 触控及盖板配置</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label className="form-label">触控类型</label>
+                  <select 
+                    name="touchType"
+                    className="form-select" 
+                    value={formData.touchType}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="CTP">电容触控 (CTP)</option>
+                    <option value="RTP">电阻触控 (RTP)</option>
+                    <option value="NONE">无触控</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">盖板玻璃</label>
+                  <select 
+                    name="coverGlass"
+                    className="form-select" 
+                    value={formData.coverGlass}
+                    onChange={handleChange}
+                  >
+                    <option value="">请选择</option>
+                    <option value="None">无盖板</option>
+                    <option value="G+G">G+G (玻璃+玻璃)</option>
+                    <option value="G+F">G+F (玻璃+薄膜)</option>
+                    <option value="F+F">F+F (薄膜+薄膜)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* 备注 */}
+            <div className="form-group">
+              <label className="form-label">备注说明</label>
+              <textarea 
+                name="remarks"
+                className="form-input" 
+                value={formData.remarks}
+                onChange={handleChange}
+                rows={4}
+                placeholder="请输入其他说明..."
+                style={{ resize: 'vertical' }}
+              />
+            </div>
+
+            {/* 操作按钮 */}
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '30px' }}>
+              <button type="submit" className="btn btn-primary">
+                提交方案
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => window.print()}>
+                打印配置
+              </button>
+            </div>
+          </form>
+        </div>
       </main>
     </div>
   );
