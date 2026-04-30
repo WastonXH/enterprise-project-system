@@ -90,6 +90,7 @@ const PROJECT_LEVELS = [
 
 // 触控技术选项
 const TOUCH_TECHNOLOGIES = [
+  { value: '无', label: '无' },
   { value: '外挂式', label: '外挂式' },
   { value: 'INCELL', label: 'INCELL' },
   { value: 'ONCELL', label: 'ONCELL' },
@@ -177,8 +178,8 @@ export default function BusinessDepartmentPage() {
     potentialOrderQuantity: '',
     environmentalRequirements: [],
     environmentalOther: '',
-    touchTechnology: '',
-    viewingAngleTechnology: '',
+    touchTechnology: '无',
+    viewingAngleTechnology: 'IPS',
   });
 
   useEffect(() => {
