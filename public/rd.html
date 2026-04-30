@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>研发部配置 - 触控及盖板方案</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            display: block;
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .checkbox-item:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .radio-item:hover {
+            background: #f0f0f0;
+        }
+
+        .radio-item.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .radio-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .dynamic-input {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .dynamic-input.show {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .subsection {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .subsection-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .show {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        .result-content {
+            color: #388e3c;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+            }
+            .header {
+                padding: 20px;
+            }
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 研发部配置</h1>
+            <p>触控及盖板方案配置系统</p>
+        </div>
+
+        <div class="content">
+            <!-- 触摸屏方案选择 -->
+            <div class="section">
+                <h2 class="section-title">触摸屏方案选择</h2>
+                
+                <div class="form-group">
+                    <label class="label">请选择配置方式：</label>
+                    <div class="radio-group" id="modeSelector">
+                        <div class="radio-item selected" data-value="multi-select">
+                            <input type="radio" name="touchscreenMode" value="multi-select" checked>
+                            <span>触控/盖板方案（多选）</span>
+                        </div>
+                        <div class="radio-item" data-value="resistive">
+                            <input type="radio" name="touchscreenMode" value="resistive">
+                            <span>电阻触摸屏型号（填写）</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 电阻触摸屏型号 -->
+                <div id="resistiveSection" class="hidden">
+                    <div class="form-group">
+                        <label class="label">电阻触摸屏型号：</label>
+                        <input type="text" class="input" id="resistiveModel" placeholder="请输入电阻触摸屏型号">
+                    </div>
+                </div>
+
+                <!-- 触控/盖板方案（多选） -->
+                <div id="multiSelectSection" class="show">
+                    <div class="form-group">
+                        <label class="label">触控/盖板方案（可多选）：</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="touchscreenType" value="盖板规格">
+                                <span>盖板规格</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" name="touchscreenType" value="电容触控IC 方案">
+                                <span>电容触控IC 方案</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 盖板规格配置 -->
+                    <div id="coverSpecSection" class="subsection hidden">
+                        <h3 class="subsection-title">盖板规格配置</h3>
+                        
+                        <div class="form-group">
+                            <label class="label">a. 盖板材质和结构：</label>
+                            <div class="radio-group">
+                                <label class="radio-item">
+                                    <input type="radio" name="coverMaterial" value="GG">
+                                    <span>GG</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="coverMaterial" value="GFF">
+                                    <span>GFF</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="coverMaterial" value="OGS">
+                                    <span>OGS</span>
+                                </label>
+                                <label class="radio-item">
+                                    <input type="radio" name="coverMaterial" value="其它">
+                                    <span>其它</span>
+                                </label>
+                            </div>
+                            <div class="dynamic-input" id="coverMaterialOtherDiv">
+                                <input type="text" class="input" id="coverMaterialOther" placeholder="请说明">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="label">b. 盖板及表面处理：</label>
+                            <div class="form-group">
+                                <label class="label">厚度：</label>
+                                <input type="text" class="input" id="coverThickness" placeholder="例如：0.55mm">
+                            </div>
+                            <div class="form-group">
+                                <label class="label">表面处理（可多选）：</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="surfaceTreatment" value="AG">
+                                        <span>AG</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="surfaceTreatment" value="AR">
+                                        <span>AR</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="surfaceTreatment" value="AF">
+                                        <span>AF</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="surfaceTreatment" value="抗UV">
+                                        <span>抗UV</span>
+                                    </label>
+                                    <label class="checkbox-item">
+                                        <input type="checkbox" name="surfaceTreatment" value="其它（填写）">
+                                        <span>其它（填写）</span>
+                                    </label>
+                                </div>
+                                <div class="dynamic-input" id="surfaceTreatmentOtherDiv">
+                                    <input type="text" class="input" id="surfaceTreatmentOther" placeholder="请说明">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 电容触控IC方案配置 -->
+                    <div id="capacitiveSection" class="subsection hidden">
+                        <h3 class="subsection-title">电容触控IC 方案配置</h3>
+                        
+                        <div class="form-group">
+                            <label class="label">a. 触控IC特性（可多选）：</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="capacitiveFeature" value="触控IC (填写)">
+                                    <span>触控IC (填写)</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="capacitiveFeature" value="防水">
+                                    <span>防水</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="capacitiveFeature" value="手套">
+                                    <span>手套</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="capacitiveFeature" value="主/被动笔">
+                                    <span>主/被动笔</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="capacitiveFeature" value="触控点数（填写）">
+                                    <span>触控点数（填写）</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="capacitiveFeature" value="其它">
+                                    <span>其它</span>
+                                </label>
+                            </div>
+                            
+                            <!-- 动态输入框 -->
+                            <div class="dynamic-input" id="capacitiveICDiv">
+                                <input type="text" class="input" id="capacitiveIC" placeholder="请输入触控IC型号">
+                            </div>
+                            <div class="dynamic-input" id="capacitivePointsDiv">
+                                <input type="number" class="input" id="capacitivePoints" placeholder="例如：10">
+                            </div>
+                            <div class="dynamic-input" id="capacitiveFeatureOtherDiv">
+                                <input type="text" class="input" id="capacitiveFeatureOther" placeholder="请说明">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="label">b. 特殊要求（可多选）：</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="specialRequirement" value="连接器型号及品牌">
+                                    <span>连接器型号及品牌</span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" name="specialRequirement" value="其它">
+                                    <span>其它</span>
+                                </label>
+                            </div>
+                            <div class="dynamic-input" id="connectorModelDiv">
+                                <input type="text" class="input" id="connectorModel" placeholder="请输入连接器型号及品牌">
+                            </div>
+                            <div class="dynamic-input" id="specialRequirementOtherDiv">
+                                <input type="text" class="input" id="specialRequirementOther" placeholder="请说明">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交按钮 -->
+            <button class="btn" onclick="submitForm()">💾 保存设计方案</button>
+
+            <!-- 结果显示 -->
+            <div id="resultBox" class="result-box">
+                <div class="result-title">✅ 配置已保存</div>
+                <div class="result-content" id="resultContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模式切换逻辑
+        const modeSelector = document.getElementById('modeSelector');
+        const resistiveSection = document.getElementById('resistiveSection');
+        const multiSelectSection = document.getElementById('multiSelectSection');
+
+        modeSelector.addEventListener('click', function(e) {
+            const radioItem = e.target.closest('.radio-item');
+            if (!radioItem) return;
+
+            // 更新选中状态
+            document.querySelectorAll('#modeSelector .radio-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            radioItem.classList.add('selected');
+
+            // 显示/隐藏对应区域
+            const mode = radioItem.dataset.value;
+            if (mode === 'resistive') {
+                resistiveSection.classList.remove('hidden');
+                resistiveSection.classList.add('show');
+                multiSelectSection.classList.add('hidden');
+                multiSelectSection.classList.remove('show');
+            } else {
+                resistiveSection.classList.add('hidden');
+                resistiveSection.classList.remove('show');
+                multiSelectSection.classList.remove('hidden');
+                multiSelectSection.classList.add('show');
+            }
+        });
+
+        // 触控/盖板方案多选逻辑
+        const touchscreenTypeCheckboxes = document.querySelectorAll('input[name="touchscreenType"]');
+        const coverSpecSection = document.getElementById('coverSpecSection');
+        const capacitiveSection = document.getElementById('capacitiveSection');
+
+        function updateSections() {
+            const selectedTypes = Array.from(touchscreenTypeCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            // 显示/隐藏盖板规格
+            if (selectedTypes.includes('盖板规格')) {
+                coverSpecSection.classList.remove('hidden');
+                coverSpecSection.classList.add('show');
+            } else {
+                coverSpecSection.classList.add('hidden');
+                coverSpecSection.classList.remove('show');
+            }
+
+            // 显示/隐藏电容触控IC方案
+            if (selectedTypes.includes('电容触控IC 方案')) {
+                capacitiveSection.classList.remove('hidden');
+                capacitiveSection.classList.add('show');
+            } else {
+                capacitiveSection.classList.add('hidden');
+                capacitiveSection.classList.remove('show');
+            }
+        }
+
+        touchscreenTypeCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSections);
+        });
+
+        // 盖板材质选择逻辑
+        const coverMaterialRadios = document.querySelectorAll('input[name="coverMaterial"]');
+        const coverMaterialOtherDiv = document.getElementById('coverMaterialOtherDiv');
+
+        coverMaterialRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === '其它') {
+                    coverMaterialOtherDiv.classList.add('show');
+                } else {
+                    coverMaterialOtherDiv.classList.remove('show');
+                }
+            });
+        });
+
+        // 表面处理"其它"输入框
+        const surfaceTreatmentOtherCheckbox = document.querySelector('input[name="surfaceTreatment"][value="其它（填写）"]');
+        const surfaceTreatmentOtherDiv = document.getElementById('surfaceTreatmentOtherDiv');
+
+        if (surfaceTreatmentOtherCheckbox) {
+            surfaceTreatmentOtherCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    surfaceTreatmentOtherDiv.classList.add('show');
+                } else {
+                    surfaceTreatmentOtherDiv.classList.remove('show');
+                }
+            });
+        }
+
+        // 电容触控IC特性动态输入框
+        const capacitiveFeatureCheckboxes = document.querySelectorAll('input[name="capacitiveFeature"]');
+        const capacitiveICDiv = document.getElementById('capacitiveICDiv');
+        const capacitivePointsDiv = document.getElementById('capacitivePointsDiv');
+        const capacitiveFeatureOtherDiv = document.getElementById('capacitiveFeatureOtherDiv');
+
+        capacitiveFeatureCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedValues = Array.from(document.querySelectorAll('input[name="capacitiveFeature"]:checked'))
+                    .map(cb => cb.value);
+
+                capacitiveICDiv.classList.toggle('show', checkedValues.includes('触控IC (填写)'));
+                capacitivePointsDiv.classList.toggle('show', checkedValues.includes('触控点数（填写）'));
+                capacitiveFeatureOtherDiv.classList.toggle('show', checkedValues.includes('其它'));
+            });
+        });
+
+        // 特殊要求动态输入框
+        const specialRequirementCheckboxes = document.querySelectorAll('input[name="specialRequirement"]');
+        const connectorModelDiv = document.getElementById('connectorModelDiv');
+        const specialRequirementOtherDiv = document.getElementById('specialRequirementOtherDiv');
+
+        specialRequirementCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const checkedValues = Array.from(document.querySelectorAll('input[name="specialRequirement"]:checked'))
+                    .map(cb => cb.value);
+
+                connectorModelDiv.classList.toggle('show', checkedValues.includes('连接器型号及品牌'));
+                specialRequirementOtherDiv.classList.toggle('show', checkedValues.includes('其它'));
+            });
+        });
+
+        // 提交表单
+        function submitForm() {
+            const resultBox = document.getElementById('resultBox');
+            const resultContent = document.getElementById('resultContent');
+            
+            // 获取选中的模式
+            const mode = document.querySelector('input[name="touchscreenMode"]:checked').value;
+            
+            let config = '';
+
+            if (mode === 'resistive') {
+                const resistiveModel = document.getElementById('resistiveModel').value;
+                config += `<strong>方案类型：</strong> 电阻触摸屏型号（填写）<br>`;
+                config += `<strong>电阻触摸屏型号：</strong> ${resistiveModel || '未填写'}<br>`;
+            } else {
+                config += `<strong>方案类型：</strong> 触控/盖板方案（多选）<br>`;
+                
+                // 获取选中的触控/盖板方案
+                const selectedTypes = Array.from(document.querySelectorAll('input[name="touchscreenType"]:checked'))
+                    .map(cb => cb.value);
+                config += `<strong>已选方案：</strong> ${selectedTypes.join(', ') || '无'}<br><br>`;
+
+                // 盖板规格
+                if (selectedTypes.includes('盖板规格')) {
+                    const coverMaterial = document.querySelector('input[name="coverMaterial"]:checked')?.value || '未选择';
+                    const coverMaterialOther = document.getElementById('coverMaterialOther').value;
+                    const coverThickness = document.getElementById('coverThickness').value;
+                    const surfaceTreatments = Array.from(document.querySelectorAll('input[name="surfaceTreatment"]:checked'))
+                        .map(cb => cb.value);
+                    const surfaceTreatmentOther = document.getElementById('surfaceTreatmentOther').value;
+
+                    config += `<strong>盖板规格配置：</strong><br>`;
+                    config += `- 盖板材质：${coverMaterial}${coverMaterial === '其它' ? ` (${coverMaterialOther})` : ''}<br>`;
+                    config += `- 厚度：${coverThickness || '未填写'}<br>`;
+                    config += `- 表面处理：${surfaceTreatments.join(', ') || '无'}${surfaceTreatments.includes('其它（填写）') ? ` (${surfaceTreatmentOther})` : ''}<br><br>`;
+                }
+
+                // 电容触控IC方案
+                if (selectedTypes.includes('电容触控IC 方案')) {
+                    const capacitiveFeatures = Array.from(document.querySelectorAll('input[name="capacitiveFeature"]:checked'))
+                        .map(cb => cb.value);
+                    const capacitiveIC = document.getElementById('capacitiveIC').value;
+                    const capacitivePoints = document.getElementById('capacitivePoints').value;
+                    const capacitiveFeatureOther = document.getElementById('capacitiveFeatureOther').value;
+                    const specialRequirements = Array.from(document.querySelectorAll('input[name="specialRequirement"]:checked'))
+                        .map(cb => cb.value);
+                    const connectorModel = document.getElementById('connectorModel').value;
+                    const specialRequirementOther = document.getElementById('specialRequirementOther').value;
+
+                    config += `<strong>电容触控IC方案配置：</strong><br>`;
+                    config += `- 触控IC特性：${capacitiveFeatures.join(', ') || '无'}<br>`;
+                    if (capacitiveFeatures.includes('触控IC (填写)')) {
+                        config += `- 触控IC型号：${capacitiveIC || '未填写'}<br>`;
+                    }
+                    if (capacitiveFeatures.includes('触控点数（填写）')) {
+                        config += `- 触控点数：${capacitivePoints || '未填写'}<br>`;
+                    }
+                    if (capacitiveFeatures.includes('其它')) {
+                        config += `- 其它说明：${capacitiveFeatureOther || '未填写'}<br>`;
+                    }
+                    config += `- 特殊要求：${specialRequirements.join(', ') || '无'}<br>`;
+                    if (specialRequirements.includes('连接器型号及品牌')) {
+                        config += `- 连接器型号及品牌：${connectorModel || '未填写'}<br>`;
+                    }
+                    if (specialRequirements.includes('其它')) {
+                        config += `- 其它说明：${specialRequirementOther || '未填写'}<br>`;
+                    }
+                }
+            }
+
+            resultContent.innerHTML = config;
+            resultBox.classList.add('show');
+            
+            // 滚动到结果区域
+            resultBox.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
