@@ -370,6 +370,41 @@ pnpm lint
 - `DEPLOY_RUN_PORT`: 服务监听端口（5000）
 - `COZE_PROJECT_ENV`: 环境标识（DEV 或 PROD）
 
+### 数据库配置
+
+**沙箱环境**：
+- 使用系统预置的 PostgreSQL 数据库（Volces 云数据库）
+- 数据库连接通过环境变量 `PGDATABASE_URL` 自动配置
+
+**Netlify 部署**：
+需要在 Netlify 项目设置中添加以下环境变量：
+
+| 变量名 | 说明 | 示例值 |
+|--------|------|--------|
+| `PGDATABASE_URL` | PostgreSQL 连接字符串 | `postgresql://user:password@host:port/db?sslmode=require` |
+
+**注意**：
+- 沙箱环境使用 Volces 数据库，部署到 Netlify 时需配置自己的 Supabase 或其他 PostgreSQL 数据库
+- 数据库表结构通过 `/api/diagnosis?action=init` 初始化或手动执行 SQL 创建
+
+## 诊断管理页面
+
+**位置**: `/diagnosis`
+
+**功能**:
+- 查看各表数据量统计
+- 初始化示例数据
+- 清理指定表或全部数据
+- **需求-方案关联视图**：查看项目需求及其设计方案
+- **单条数据编辑**：编辑项目需求或设计方案的字段
+- **单条数据删除**：删除单个项目需求或设计方案
+
+**API 接口**:
+- `GET /api/diagnosis?action=relation`: 获取需求-方案关联视图
+- `GET /api/diagnosis?action=getOne&type=requirement&id=1`: 获取单个记录
+- `PUT /api/diagnosis`: 更新单条数据（需传 type, id, data）
+- `DELETE /api/diagnosis`: 删除单条数据（需传 type, id）或清理表数据（需传 table, confirm）
+
 ## 已知问题
 
 1. **ESLint 警告**:
@@ -382,6 +417,119 @@ pnpm lint
    - 可以通过配置 `outputFileTracingRoot` 来消除警告
 
 ## 更新日志
+
+### 2026-05-07 (下午)
+
+**诊断页面增强**：
+
+1. **清空数据自动重置编号**：清空所有数据时自动清除 localStorage 中的需求编号，使编号从 RFQ-26-0001 重新开始
+2. **需求管理 Tab**：将"初始化数据"改为"需求管理"，支持查看和删除需求
+3. **删除需求功能**：删除需求时会一并删除关联的设计方案
+
+### 2026-05-07 (新增功能)
+
+**玻璃和IC自动补全功能**：
+
+研发部工作台中玻璃型号和IC型号使用 Combobox 组件实现自动补全，支持从正式库和临时库中选择。
+
+**功能特性**：
+- 下拉选择：从正式采购库和临时申请库中选择已有物料
+- 自动补全：输入时实时过滤匹配的选项
+- 来源标识：选项显示来源（正式库/待审批库）
+- 回车确认：输入新型号后按回车，提示是否加入资源库
+
+**新增组件**：
+- `src/components/ui/combobox.tsx`: Combobox 自动补全组件
+
+**修改文件**：
+- `src/app/department/rd/page.tsx`: 使用 Combobox 组件
+
+### 2026-05-06 (新增功能)
+
+**物料申请审批流程**：
+
+研发部在设计方案中使用临时物料时，系统会将物料存入临时申请库。采购部可以在采购工作台查看待审批物料列表，对物料进行编码审批（批准/拒绝）。
+
+**新增数据库表**：
+- `pending_glass_resources`: 待审批玻璃资源
+- `pending_ic_resources`: 待审批IC资源
+
+**新增API**：
+- `GET /api/pending-resources`: 获取待审批物料列表
+- `POST /api/pending-resources`: 添加待审批物料
+- `PUT /api/pending-resources`: 审批操作（approve/reject）
+
+**业务流程**：
+1. 研发部在方案设计时选择"手动输入"玻璃/IC型号并申请入库
+2. 物料存入 `pending_*_resources` 表（status: pending）
+3. 采购部登录采购工作台，查看"待审批物料" Tab
+4. 采购人员审核后输入正式编码，点击"批准"或"拒绝"
+5. 批准后物料自动转入正式采购库（`glass_resources` / `ic_resources`）
+
+**修改文件**：
+- `src/storage/database/shared/schema.ts`: 新增 PendingGlassResource/PendingIcResource 类型
+- `src/storage/database/pendingResourceManager.ts`: 新建文件
+- `src/app/api/pending-resources/route.ts`: 新建文件
+- `src/app/department/rd/page.tsx`: 临时物料申请逻辑
+- `src/app/department/purchasing/page.tsx`: 待审批物料 Tab
+
+### 2026-05-06 (下午)
+
+**Bug 修复与功能优化**:
+
+**业务部**:
+1. 修复需求编号预览时错误递增问题
+   - 需求编号仅在确认提交成功后递增
+   - 预览和返回修改不会导致编号浪费
+2. 添加提交日期可修改功能
+   - 在基础信息区域添加日期选择器
+   - 支持补录历史数据
+3. 修复打印需求表最后一页空白页问题
+
+**研发部**:
+1. FPC 型号自动命名逻辑
+   - 选择"新开"时：自动按 `RFQ编号-FPC` 命名
+   - 选择"共用"时：允许手动填写
+2. 背光型号选项调整
+   - "新开" → "新开模具"
+   - 新增"共用模具微调名称"选项
+3. 保存方案添加成功/失败 Toast 提示
+
+**影响范围**:
+- `src/app/department/business/page.tsx`
+- `src/app/department/rd/page.tsx`
+
+**测试结果**:
+- TypeScript 类型检查通过
+- 业务部页面正常运行
+- 研发部页面正常运行
+
+### 2026-05-06
+
+**新增功能**: 诊断管理页面增强
+
+**修改内容**:
+1. 扩展 `/api/diagnosis` API：
+   - 新增 `action=relation` 获取需求-方案关联视图
+   - 新增 `action=getOne` 获取单个记录详情
+   - 新增 PUT 方法支持单条数据编辑
+   - 增强 DELETE 方法支持单条数据删除
+2. 重构诊断页面 (`/diagnosis`)：
+   - 添加 Tab 切换（数据状态 / 需求-方案关联视图）
+   - 关联视图展示项目需求及其设计方案列表
+   - 每条需求/方案支持"编辑"和"删除"操作
+   - 编辑对话框支持编辑常用字段
+
+**影响范围**:
+- `src/app/api/diagnosis/route.ts`: 扩展 API 接口
+- `src/app/diagnosis/page.tsx`: 重构诊断页面
+
+**测试结果**:
+- ✅ TypeScript 类型检查通过
+- ✅ 服务运行正常（5000 端口）
+- ✅ 关联视图 API 正常
+- ✅ 单条数据编辑功能正常
+- ✅ 单条数据删除功能正常
 
 ### 2026-04-22
 

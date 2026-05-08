@@ -11,16 +11,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 
 // 生成需求编号：RFQ + 年份末两位 + 四位流水号
-function generateRequirementId(): string {
+// increment: 是否递增（只在确认提交时递增）
+function generateRequirementId(increment: boolean = false): string {
   const year = new Date().getFullYear().toString().slice(-2);
   const storageKey = 'requirementSequenceNumber';
   let sequence = parseInt(localStorage.getItem(storageKey) || '0');
   
-  sequence = (sequence + 1) % 10000;
-  localStorage.setItem(storageKey, sequence.toString());
+  if (increment) {
+    sequence = (sequence + 1) % 10000;
+    localStorage.setItem(storageKey, sequence.toString());
+  }
   
   const sequenceStr = sequence.toString().padStart(4, '0');
   return `RFQ-${year}-${sequenceStr}`;
@@ -138,6 +141,7 @@ interface FormData {
   environmentalOther: string; // 环保要求-其它（选填）
   touchTechnology: string; // 触控技术
   viewingAngleTechnology: string; // 视角技术
+  submissionDate: string; // 提交日期
 }
 
 export default function BusinessDepartmentPage() {
@@ -180,6 +184,8 @@ export default function BusinessDepartmentPage() {
     environmentalOther: '',
     touchTechnology: '无',
     viewingAngleTechnology: 'IPS',
+    // 提交日期
+    submissionDate: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -233,8 +239,8 @@ export default function BusinessDepartmentPage() {
       return;
     }
     
-    // 生成需求编号
-    const newRequirementId = generateRequirementId();
+    // 生成需求编号（不递增，只有确认提交时才递增）
+    const newRequirementId = generateRequirementId(false);
     setRequirementId(newRequirementId);
     setShowPreview(true);
   };
@@ -280,6 +286,9 @@ export default function BusinessDepartmentPage() {
         throw new Error(result.error || result.details || '提交失败');
       }
 
+      // 提交成功后递增序列号
+      generateRequirementId(true);
+      
       setShowPreview(false);
       setShowSuccess(true);
       
@@ -334,8 +343,9 @@ export default function BusinessDepartmentPage() {
       potentialOrderQuantity: '',
       environmentalRequirements: [],
       environmentalOther: '',
-      touchTechnology: '',
-      viewingAngleTechnology: '',
+      touchTechnology: '无',
+      viewingAngleTechnology: 'IPS',
+      submissionDate: new Date().toISOString().split('T')[0],
     });
     setRequirementId('');
     setShowPreview(false);
@@ -479,7 +489,19 @@ export default function BusinessDepartmentPage() {
 
           @page {
             size: A4;
-            margin: 20mm 15mm;
+            margin: 15mm 15mm;
+            margin-bottom: 10mm;
+          }
+          
+          /* 防止最后一页空白 */
+          .print-template {
+            page-break-after: auto;
+          }
+          
+          /* 确保内容填满页面 */
+          html, body {
+            height: 100%;
+            overflow: visible;
           }
 
           body {
@@ -546,7 +568,7 @@ export default function BusinessDepartmentPage() {
                       <div className="h-1 w-6 bg-blue-500 rounded"></div>
                       基础信息
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="businessGroup" className="text-base font-medium">
                           业务组别 <span className="text-red-500">*</span>
@@ -569,6 +591,17 @@ export default function BusinessDepartmentPage() {
                           value={formData.customerName}
                           onChange={(e) => handleInputChange('customerName', e.target.value)}
                           required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="submissionDate" className="text-base font-medium">
+                          提交日期
+                        </Label>
+                        <Input
+                          id="submissionDate"
+                          type="date"
+                          value={formData.submissionDate}
+                          onChange={(e) => handleInputChange('submissionDate', e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -1156,6 +1189,9 @@ export default function BusinessDepartmentPage() {
       </main>
       </div>
 
+      {/* Toast 通知 */}
+      <Toaster position="top-right" richColors />
+
       {/* 打印容器（仅在打印时显示） */}
       <div className="print-container">
         <div className="print-template">
@@ -1208,7 +1244,7 @@ function PrintTemplate({ formData, requirementId }: { formData: FormData; requir
           </div>
           <div className="print-info-item">
             <span className="label">提交日期：</span>
-            <span className="value">{new Date().toLocaleDateString('zh-CN')}</span>
+            <span className="value">{formData.submissionDate ? new Date(formData.submissionDate).toLocaleDateString('zh-CN') : new Date().toLocaleDateString('zh-CN')}</span>
           </div>
         </div>
       </div>

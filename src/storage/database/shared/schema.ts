@@ -73,6 +73,45 @@ export const icResources = pgTable("ic_resources", {
 	unique("ic_resources_model_number_unique").on(table.modelNumber),
 ])
 
+// ========== 待审批玻璃资源表（研发部申请，采购部审批） ==========
+export const pendingGlassResources = pgTable("pending_glass_resources", {
+	id: serial().primaryKey().notNull(),
+	modelNumber: varchar("model_number", { length: 100 }).notNull(), // 申请时的型号
+	manufacturer: varchar({ length: 100 }), // 申请时的厂商
+	resolution: varchar({ length: 50 }), // 分辨率
+	interfaceType: varchar("interface_type", { length: 50 }), // 接口类型
+	thickness: varchar({ length: 20 }), // 厚度
+	submittedBy: varchar("submitted_by", { length: 100 }).default("研发部"), // 提交部门
+	solutionId: integer("solution_id"), // 关联的设计方案ID
+	productModel: varchar("product_model", { length: 100 }), // 产品型号
+	status: varchar("status", { length: 20 }).default("pending"), // pending/approved/rejected
+	approvedBy: varchar("approved_by", { length: 100 }), // 审批人
+	approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }), // 审批时间
+	finalModelNumber: varchar("final_model_number", { length: 100 }), // 审批后的正式型号编码
+	remarks: text(), // 备注
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+})
+
+// ========== 待审批IC资源表（研发部申请，采购部审批） ==========
+export const pendingIcResources = pgTable("pending_ic_resources", {
+	id: serial().primaryKey().notNull(),
+	modelNumber: varchar("model_number", { length: 100 }).notNull(), // 申请时的型号
+	manufacturer: varchar({ length: 100 }), // 申请时的厂商
+	resolution: varchar({ length: 50 }), // 分辨率
+	packageType: varchar("package_type", { length: 50 }), // 封装类型
+	submittedBy: varchar("submitted_by", { length: 100 }).default("研发部"), // 提交部门
+	solutionId: integer("solution_id"), // 关联的设计方案ID
+	productModel: varchar("product_model", { length: 100 }), // 产品型号
+	status: varchar("status", { length: 20 }).default("pending"), // pending/approved/rejected
+	approvedBy: varchar("approved_by", { length: 100 }), // 审批人
+	approvedAt: timestamp("approved_at", { withTimezone: true, mode: 'string' }), // 审批时间
+	finalModelNumber: varchar("final_model_number", { length: 100 }), // 审批后的正式型号编码
+	remarks: text(), // 备注
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+})
+
 // ========== 设计方案表（研发部） ==========
 export const designSolutions = pgTable("design_solutions", {
 	id: serial().primaryKey().notNull(),
@@ -412,3 +451,6 @@ export type UpdateComponentRequest = z.infer<typeof updateComponentRequestSchema
 export type ComponentCode = typeof componentCodes.$inferSelect
 export type InsertComponentCode = z.infer<typeof insertComponentCodeSchema>
 export type UpdateComponentCode = z.infer<typeof updateComponentCodeSchema>
+
+export type PendingGlassResource = typeof pendingGlassResources.$inferSelect
+export type PendingIcResource = typeof pendingIcResources.$inferSelect

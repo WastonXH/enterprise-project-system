@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Database, Trash2, RefreshCw, ShoppingCart, Search, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Plus, Database, Trash2, RefreshCw, ShoppingCart, Search, CheckCircle2, AlertCircle, Clock, CheckCheck, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 // 资源类型
@@ -49,6 +50,27 @@ interface ComponentRequest {
   createdAt: string;
 }
 
+// 待审批物料接口
+interface PendingMaterial {
+  type: 'glass' | 'ic'; // 物料类型
+  id: number;
+  modelNumber: string;
+  manufacturer: string | null;
+  resolution: string | null;
+  interfaceType?: string | null;
+  thickness?: string | null;
+  packageType?: string | null;
+  submittedBy: string | null;
+  solutionId: number | null;
+  productModel: string | null;
+  status: string;
+  approvedBy: string | null;
+  approvedAt: string | null;
+  finalModelNumber: string | null;
+  remarks: string | null;
+  createdAt: string;
+}
+
 export default function PurchasingDepartmentPage() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<string>('request');
@@ -56,6 +78,17 @@ export default function PurchasingDepartmentPage() {
   const [icResources, setIcResources] = useState<ICResource[]>([]);
   const [componentRequests, setComponentRequests] = useState<ComponentRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 待审批物料状态
+  const [pendingGlass, setPendingGlass] = useState<PendingMaterial[]>([]);
+  const [pendingIc, setPendingIc] = useState<PendingMaterial[]>([]);
+  const [approveDialog, setApproveDialog] = useState<{
+    open: boolean;
+    type: 'glass' | 'ic';
+    material: PendingMaterial | null;
+    action: 'approve' | 'reject' | null;
+  }>({ open: false, type: 'glass', material: null, action: null });
+  const [approveForm, setApproveForm] = useState({ finalModelNumber: '', remarks: '' });
 
   // 表单状态
   const [glassForm, setGlassForm] = useState({
@@ -96,10 +129,12 @@ export default function PurchasingDepartmentPage() {
   const loadResources = async () => {
     setIsLoading(true);
     try {
-      const [glassRes, icRes, requestRes] = await Promise.all([
+      const [glassRes, icRes, requestRes, pendingGlassRes, pendingIcRes] = await Promise.all([
         fetch('/api/resources/glass'),
         fetch('/api/resources/ic'),
         fetch('/api/component-requests'),
+        fetch('/api/pending-resources?type=glass'),
+        fetch('/api/pending-resources?type=ic'),
       ]);
 
       if (glassRes.ok) {
@@ -115,6 +150,17 @@ export default function PurchasingDepartmentPage() {
       if (requestRes.ok) {
         const requestData = await requestRes.json();
         setComponentRequests(requestData.data || []);
+      }
+
+      // 加载待审批物料
+      if (pendingGlassRes.ok) {
+        const pendingGlassData = await pendingGlassRes.json();
+        setPendingGlass(pendingGlassData.data || []);
+      }
+
+      if (pendingIcRes.ok) {
+        const pendingIcData = await pendingIcRes.json();
+        setPendingIc(pendingIcData.data || []);
       }
     } catch (error) {
       console.error('加载资源失败:', error);
@@ -180,6 +226,73 @@ export default function PurchasingDepartmentPage() {
       loadResources();
     } catch (error) {
       toast.error('添加失败，请重试');
+    }
+  };
+
+  // 打开审批对话框
+  const openApproveDialog = (type: 'glass' | 'ic', material: PendingMaterial, action: 'approve' | 'reject') => {
+    setApproveDialog({ open: true, type, material, action });
+    setApproveForm({
+      finalModelNumber: material.modelNumber, // 预填充原型号
+      remarks: '',
+    });
+  };
+
+  // 处理审批操作
+  const handleApprove = async () => {
+    if (!approveDialog.material) return;
+
+    if (approveDialog.action === 'approve' && !approveForm.finalModelNumber) {
+      toast.error('请填写正式型号编码');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/pending-resources', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: approveDialog.type,
+          action: approveDialog.action,
+          id: approveDialog.material.id,
+          finalModelNumber: approveForm.finalModelNumber,
+          remarks: approveForm.remarks,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success(approveDialog.action === 'approve' ? '已批准，物料已转入正式库' : '已拒绝');
+        setApproveDialog({ open: false, type: 'glass', material: null, action: null });
+        loadResources(); // 刷新列表
+      } else {
+        toast.error(data.error || '操作失败');
+      }
+    } catch (error) {
+      toast.error('操作失败');
+    }
+  };
+
+  // 删除待审批物料
+  const handleDeletePending = async (type: 'glass' | 'ic', id: number) => {
+    if (!confirm('确定要删除这条申请记录吗？')) return;
+
+    try {
+      const response = await fetch('/api/pending-resources', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, id }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        toast.success('已删除');
+        loadResources();
+      } else {
+        toast.error('删除失败');
+      }
+    } catch (error) {
+      toast.error('删除失败');
     }
   };
 
@@ -313,10 +426,19 @@ export default function PurchasingDepartmentPage() {
       {/* 主内容区 */}
       <main className="container mx-auto px-4 py-8 max-w-7xl">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto">
+          <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto">
             <TabsTrigger value="request" className="text-base">
               <ShoppingCart className="h-4 w-4 mr-2" />
               零部件申请
+            </TabsTrigger>
+            <TabsTrigger value="pending" className="text-base">
+              <Clock className="h-4 w-4 mr-2" />
+              待审批物料
+              {pendingGlass.filter(p => p.status === 'pending').length + pendingIc.filter(p => p.status === 'pending').length > 0 && (
+                <Badge variant="destructive" className="ml-2">
+                  {pendingGlass.filter(p => p.status === 'pending').length + pendingIc.filter(p => p.status === 'pending').length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="glass" className="text-base">
               <Database className="h-4 w-4 mr-2" />
@@ -537,6 +659,163 @@ export default function PurchasingDepartmentPage() {
                     )}
                   </TableBody>
                 </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 待审批物料 */}
+          <TabsContent value="pending" className="space-y-6">
+            <Card className="border-2 shadow-xl">
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <Clock className="h-6 w-6" />
+                  研发部物料申请审批
+                </CardTitle>
+                <CardDescription className="text-purple-100 text-base">
+                  审核研发部提交的临时物料申请，通过后加入正式资源库
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {/* 待审批玻璃物料 */}
+                {pendingGlass.filter(p => p.status === 'pending').length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-orange-500" />
+                      待审批玻璃物料 ({pendingGlass.filter(p => p.status === 'pending').length})
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>申请型号</TableHead>
+                          <TableHead>厂商</TableHead>
+                          <TableHead>分辨率</TableHead>
+                          <TableHead>关联产品</TableHead>
+                          <TableHead>提交时间</TableHead>
+                          <TableHead>操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pendingGlass.filter(p => p.status === 'pending').map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.modelNumber}</TableCell>
+                            <TableCell>{item.manufacturer || '-'}</TableCell>
+                            <TableCell>{item.resolution || '-'}</TableCell>
+                            <TableCell>{item.productModel || '-'}</TableCell>
+                            <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="default" onClick={() => openApproveDialog('glass', item, 'approve')}>
+                                  <CheckCheck className="h-4 w-4 mr-1" /> 批准
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => openApproveDialog('glass', item, 'reject')}>
+                                  <X className="h-4 w-4 mr-1" /> 拒绝
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleDeletePending('glass', item.id)}>
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* 待审批IC物料 */}
+                {pendingIc.filter(p => p.status === 'pending').length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-orange-500" />
+                      待审批IC物料 ({pendingIc.filter(p => p.status === 'pending').length})
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>申请型号</TableHead>
+                          <TableHead>厂商</TableHead>
+                          <TableHead>分辨率</TableHead>
+                          <TableHead>关联产品</TableHead>
+                          <TableHead>提交时间</TableHead>
+                          <TableHead>操作</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {pendingIc.filter(p => p.status === 'pending').map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.modelNumber}</TableCell>
+                            <TableCell>{item.manufacturer || '-'}</TableCell>
+                            <TableCell>{item.resolution || '-'}</TableCell>
+                            <TableCell>{item.productModel || '-'}</TableCell>
+                            <TableCell>{new Date(item.createdAt).toLocaleString()}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="default" onClick={() => openApproveDialog('ic', item, 'approve')}>
+                                  <CheckCheck className="h-4 w-4 mr-1" /> 批准
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => openApproveDialog('ic', item, 'reject')}>
+                                  <X className="h-4 w-4 mr-1" /> 拒绝
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleDeletePending('ic', item.id)}>
+                                  <Trash2 className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* 已处理记录 */}
+                {(pendingGlass.filter(p => p.status !== 'pending').length > 0 || pendingIc.filter(p => p.status !== 'pending').length > 0) && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      已处理记录
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>类型</TableHead>
+                          <TableHead>申请型号</TableHead>
+                          <TableHead>审批后型号</TableHead>
+                          <TableHead>状态</TableHead>
+                          <TableHead>审批时间</TableHead>
+                          <TableHead>备注</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...pendingGlass, ...pendingIc].filter(p => p.status !== 'pending').map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <Badge variant="outline">{item.type === 'glass' ? '玻璃' : 'IC'}</Badge>
+                            </TableCell>
+                            <TableCell>{item.modelNumber}</TableCell>
+                            <TableCell>{item.finalModelNumber || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={item.status === 'approved' ? 'default' : 'secondary'}>
+                                {item.status === 'approved' ? '已批准' : '已拒绝'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{item.approvedAt ? new Date(item.approvedAt).toLocaleString() : '-'}</TableCell>
+                            <TableCell>{item.remarks || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                {/* 无待审批物料 */}
+                {pendingGlass.filter(p => p.status === 'pending').length === 0 && pendingIc.filter(p => p.status === 'pending').length === 0 && (
+                  <div className="text-center py-12 text-gray-500">
+                    <CheckCircle2 className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                    <p className="text-lg">暂无待审批物料</p>
+                    <p className="text-sm">研发部提交的新物料申请将显示在这里</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -838,6 +1117,71 @@ export default function PurchasingDepartmentPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* 审批对话框 */}
+      <Dialog open={approveDialog.open} onOpenChange={(open) => !open && setApproveDialog({ open: false, type: 'glass', material: null, action: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {approveDialog.action === 'approve' ? '批准物料申请' : '拒绝物料申请'}
+            </DialogTitle>
+            <DialogDescription>
+              {approveDialog.action === 'approve' ? (
+                <>
+                  <p>物料型号：<strong>{approveDialog.material?.modelNumber}</strong></p>
+                  <p className="mt-2">请填写审批后的正式型号编码：</p>
+                </>
+              ) : (
+                <>确定要拒绝此物料申请吗？</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {approveDialog.action === 'approve' ? (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="finalModelNumber">正式型号编码 <span className="text-red-500">*</span></Label>
+                <Input
+                  id="finalModelNumber"
+                  value={approveForm.finalModelNumber}
+                  onChange={(e) => setApproveForm({ ...approveForm, finalModelNumber: e.target.value })}
+                  placeholder="审批后的正式型号编码"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="approveRemarks">备注</Label>
+                <Textarea
+                  id="approveRemarks"
+                  value={approveForm.remarks}
+                  onChange={(e) => setApproveForm({ ...approveForm, remarks: e.target.value })}
+                  placeholder="可选备注信息"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="rejectRemarks">拒绝原因</Label>
+                <Textarea
+                  id="rejectRemarks"
+                  value={approveForm.remarks}
+                  onChange={(e) => setApproveForm({ ...approveForm, remarks: e.target.value })}
+                  placeholder="请说明拒绝原因"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveDialog({ open: false, type: 'glass', material: null, action: null })}>
+              取消
+            </Button>
+            <Button onClick={handleApprove}>
+              {approveDialog.action === 'approve' ? '确认批准' : '确认拒绝'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

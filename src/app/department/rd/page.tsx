@@ -15,6 +15,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Combobox } from '@/components/ui/combobox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // 偏光片类型
 const POLARIZER_TYPES = [
@@ -26,7 +37,7 @@ const POLARIZER_TYPES = [
 ] as const;
 
 // FPC/背光类型
-const TYPE_OPTIONS = ['共用型号', '新开'] as const;
+const TYPE_OPTIONS = ['共用型号', '新开模具', '共用模具微调名称'] as const;
 
 // 触摸屏模式
 const TOUCHSCREEN_MODES = ['触控/盖板方案（多选）', '电阻触摸屏型号（填写）'] as const;
@@ -146,6 +157,31 @@ export default function RDDepartmentPage() {
     bFormat: string
   } | null>(null);
 
+  // 资源确认弹窗状态
+  const [resourceDialog, setResourceDialog] = useState<{
+    open: boolean;
+    type: 'glass' | 'ic' | null;
+    inputValue: string;
+    similarResources: Array<{ id: number; modelNumber: string; manufacturer: string }>;
+    isNewResource: boolean;
+  }>({ open: false, type: null, inputValue: '', similarResources: [], isNewResource: false });
+
+  // 合并资源库数据（正式库 + 待审批库）
+  const [mergedGlassOptions, setMergedGlassOptions] = useState<Array<{
+    id: number;
+    value: string;
+    label: string;
+    subLabel: string;
+    source: 'formal' | 'pending';
+  }>>([]);
+  const [mergedICOptions, setMergedICOptions] = useState<Array<{
+    id: number;
+    value: string;
+    label: string;
+    subLabel: string;
+    source: 'formal' | 'pending';
+  }>>([]);
+
   // 表单数据
   const [formData, setFormData] = useState({
     projectId: '',
@@ -176,6 +212,133 @@ export default function RDDepartmentPage() {
   // 提交成功信息
   const [successInfo, setSuccessInfo] = useState<{ productModel: string; requirementId: string } | null>(null);
 
+  // 检测相似资源函数
+  const checkSimilarResources = (
+    type: 'glass' | 'ic',
+    inputValue: string,
+    resources: Array<{ id: number; modelNumber: string; manufacturer: string | null }>
+  ): Array<{ id: number; modelNumber: string; manufacturer: string }> => {
+    if (!inputValue.trim()) return [];
+    
+    const normalizedInput = inputValue.toLowerCase().replace(/[-_\s]/g, '');
+    return resources
+      .filter(r => {
+        const normalizedModel = r.modelNumber.toLowerCase().replace(/[-_\s]/g, '');
+        // 完全匹配
+        if (normalizedInput === normalizedModel) return false;
+        // 前缀相似（前6位相同）
+        if (normalizedInput.length >= 6 && normalizedInput.slice(0, 6) === normalizedModel.slice(0, 6)) return true;
+        // 包含匹配
+        if (normalizedInput.includes(normalizedModel) || normalizedModel.includes(normalizedInput)) return true;
+        return false;
+      })
+      .map(r => ({ ...r, manufacturer: r.manufacturer || '未知' }));
+  };
+
+  // 处理手动输入资源
+  const handleManualResourceInput = (
+    type: 'glass' | 'ic',
+    value: string,
+    resources: Array<{ id: number; modelNumber: string; manufacturer: string | null }>
+  ) => {
+    handleInputChange(type === 'glass' ? 'glassManualInput' : 'icManualInput', value);
+    
+    if (!value.trim()) {
+      setResourceDialog({ open: false, type: null, inputValue: '', similarResources: [], isNewResource: false });
+      return;
+    }
+
+    const similarResources = checkSimilarResources(type, value, resources);
+    
+    // 检查是否完全匹配
+    const isExactMatch = resources.some(
+      r => r.modelNumber.toLowerCase().replace(/[-_\s]/g, '') === value.toLowerCase().replace(/[-_\s]/g, '')
+    );
+
+    if (isExactMatch) {
+      // 如果完全匹配，提示使用数据库中的
+      setResourceDialog({
+        open: true,
+        type,
+        inputValue: value,
+        similarResources: resources
+          .filter(
+            r => r.modelNumber.toLowerCase().replace(/[-_\s]/g, '') === value.toLowerCase().replace(/[-_\s]/g, '')
+          )
+          .map(r => ({ ...r, manufacturer: r.manufacturer || '未知' })),
+        isNewResource: false,
+      });
+    } else if (similarResources.length > 0) {
+      // 有相似资源，提示选择
+      setResourceDialog({
+        open: true,
+        type,
+        inputValue: value,
+        similarResources,
+        isNewResource: false,
+      });
+    } else {
+      // 全新的资源，询问是否加入数据库
+      setResourceDialog({
+        open: true,
+        type,
+        inputValue: value,
+        similarResources: [],
+        isNewResource: true,
+      });
+    }
+  };
+
+  // 确认使用资源
+  const confirmUseResource = (resource: { id: number; modelNumber: string } | null, addToDatabase: boolean) => {
+    if (!resourceDialog.type) return;
+
+    const fieldId = resourceDialog.type === 'glass' ? 'glassModelId' : 'icModelId';
+    const fieldInput = resourceDialog.type === 'glass' ? 'glassManualInput' : 'icManualInput';
+
+    if (resource) {
+      // 使用数据库中的资源
+      handleInputChange(fieldId, resource.id.toString());
+      handleInputChange(fieldInput, '');
+    }
+    
+    // 如果选择加入数据库，改为添加到临时申请库
+    if (addToDatabase && resourceDialog.inputValue) {
+      // 获取当前项目的产品型号
+      const currentProject = projects.find(p => p.id === parseInt(formData.projectId));
+      const projectName = currentProject?.requirementId || '';
+      
+      // 使用临时申请库 API
+      const apiPath = '/api/pending-resources';
+      fetch(apiPath, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: resourceDialog.type,
+          modelNumber: resourceDialog.inputValue,
+          manufacturer: '',
+          solutionId: formData.projectId ? parseInt(formData.projectId) : undefined,
+          productModel: projectName || undefined,
+        }),
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            toast.success(`已提交${resourceDialog.type === 'glass' ? '玻璃' : 'IC'}物料申请，待采购部审批`);
+            // 刷新资源列表
+            loadResources();
+          } else {
+            toast.error('提交申请失败: ' + (data.error || '未知错误'));
+          }
+        })
+        .catch(() => {
+          toast.error('提交申请失败');
+        });
+    }
+
+    setResourceDialog({ open: false, type: null, inputValue: '', similarResources: [], isNewResource: false });
+  };
+
   useEffect(() => {
     setMounted(true);
     loadResources();
@@ -183,14 +346,15 @@ export default function RDDepartmentPage() {
 
   const loadResources = async () => {
     try {
-      // 并行加载所有资源
-      const [projRes, designRes, glassRes, icRes, codeRes, categoryRes] = await Promise.all([
+      // 并行加载所有资源（包括待审批库）
+      const [projRes, designRes, glassRes, icRes, codeRes, categoryRes, pendingRes] = await Promise.all([
         fetch('/api/project-requirements'),
         fetch('/api/design-solutions'),
         fetch('/api/resources/glass'),
         fetch('/api/resources/ic'),
         fetch('/api/component-codes'),
         fetch('/api/component-codes?action=categories'),
+        fetch('/api/pending-resources'),
       ]);
 
       if (projRes.ok) {
@@ -203,14 +367,86 @@ export default function RDDepartmentPage() {
         setDesignSolutions(designData.data || []);
       }
 
+      // 先解析待审批库数据（只解析一次）
+      let pendingData: { data: unknown[] } = { data: [] };
+      if (pendingRes.ok) {
+        pendingData = await pendingRes.json();
+      }
+
       if (glassRes.ok) {
         const glassData = await glassRes.json();
-        setGlassResources(glassData.data || glassData.resources || []);
+        const formalGlass = glassData.data || glassData.resources || [];
+        setGlassResources(formalGlass);
+
+        // 合并待审批库玻璃数据
+        const pendingGlass = ((pendingData.data || []) as { type: string; id: number; modelNumber: string; manufacturer: string | null; solutionId: number | null }[]).filter(
+          (r) => r.type === 'glass'
+        );
+
+        // 生成合并的玻璃选项
+        const merged: Array<{ id: number; value: string; label: string; subLabel: string; source: 'formal' | 'pending' }> = [];
+
+        // 添加正式库
+        formalGlass.forEach((g: { id: number; modelNumber: string; manufacturer: string | null }) => {
+          merged.push({
+            id: g.id,
+            value: `formal-glass-${g.id}`,
+            label: g.modelNumber,
+            subLabel: g.manufacturer || '未知厂商',
+            source: 'formal',
+          });
+        });
+
+        // 添加待审批库
+        pendingGlass.forEach((g) => {
+          merged.push({
+            id: g.id,
+            value: `pending-glass-${g.id}`,
+            label: g.modelNumber + (g.solutionId ? ` (方案#${g.solutionId})` : ''),
+            subLabel: g.manufacturer || '未知厂商',
+            source: 'pending',
+          });
+        });
+
+        setMergedGlassOptions(merged);
       }
 
       if (icRes.ok) {
         const icData = await icRes.json();
-        setIcResources(icData.data || icData.resources || []);
+        const formalIC = icData.data || icData.resources || [];
+        setIcResources(formalIC);
+
+        // 合并待审批库IC数据
+        const pendingIC = ((pendingData.data || []) as { type: string; id: number; modelNumber: string; manufacturer: string | null; solutionId: number | null }[]).filter(
+          (r) => r.type === 'ic'
+        );
+
+        // 生成合并的IC选项
+        const merged: Array<{ id: number; value: string; label: string; subLabel: string; source: 'formal' | 'pending' }> = [];
+
+        // 添加正式库
+        formalIC.forEach((i: { id: number; modelNumber: string; manufacturer: string | null }) => {
+          merged.push({
+            id: i.id,
+            value: `formal-ic-${i.id}`,
+            label: i.modelNumber,
+            subLabel: i.manufacturer || '未知厂商',
+            source: 'formal',
+          });
+        });
+
+        // 添加待审批库
+        pendingIC.forEach((i) => {
+          merged.push({
+            id: i.id,
+            value: `pending-ic-${i.id}`,
+            label: i.modelNumber + (i.solutionId ? ` (方案#${i.solutionId})` : ''),
+            subLabel: i.manufacturer || '未知厂商',
+            source: 'pending',
+          });
+        });
+
+        setMergedICOptions(merged);
       }
 
       if (codeRes.ok) {
@@ -282,10 +518,45 @@ export default function RDDepartmentPage() {
   }, [formData.projectId, formData.glassModelId, formData.glassManualInput, formData.icModelId, formData.icManualInput]);
 
   const handleInputChange = (field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // 当选择 FPC 类型时自动设置型号
+      if (field === 'fpcType') {
+        if (value === '新开模具') {
+          // 获取当前项目的 requirementId
+          const selectedProject = projects.find(p => p.id === parseInt(prev.projectId));
+          if (selectedProject?.requirementId) {
+            newData.fpcModel = `${selectedProject.requirementId}-FPC`;
+          } else {
+            newData.fpcModel = 'FPC-新开';
+          }
+        } else if (value === '共用型号' || value === '共用模具微调名称') {
+          // 共用类型时清空自动填写的名称
+          if (prev.fpcModel?.startsWith(prev.projectId ? projects.find(p => p.id === parseInt(prev.projectId))?.requirementId + '-FPC' || '' : '')) {
+            newData.fpcModel = '';
+          }
+        }
+      }
+      
+      // 当选择背光类型时自动设置型号
+      if (field === 'backlightType') {
+        if (value === '新开模具') {
+          const selectedProject = projects.find(p => p.id === parseInt(prev.projectId));
+          if (selectedProject?.requirementId) {
+            newData.backlightModel = `${selectedProject.requirementId}-BL`;
+          } else {
+            newData.backlightModel = 'BL-新开';
+          }
+        } else if (value === '共用型号' || value === '共用模具微调名称') {
+          if (prev.backlightModel?.startsWith(prev.projectId ? projects.find(p => p.id === parseInt(prev.projectId))?.requirementId + '-BL' || '' : '')) {
+            newData.backlightModel = '';
+          }
+        }
+      }
+      
+      return newData;
+    });
     setSuccessInfo(null); // 清除成功信息
   };
 
@@ -332,8 +603,8 @@ export default function RDDepartmentPage() {
         body: JSON.stringify({
           projectId: parseInt(formData.projectId),
           productModel,
-          glassModelId: formData.glassModelId !== 'manual' ? parseInt(formData.glassModelId) : null,
-          icModelId: formData.icModelId !== 'manual' ? parseInt(formData.icModelId) : null,
+          glassModelId: (formData.glassModelId && formData.glassModelId !== 'manual') ? parseInt(formData.glassModelId) || null : null,
+          icModelId: (formData.icModelId && formData.icModelId !== 'manual') ? parseInt(formData.icModelId) || null : null,
           polarizerType: formData.polarizerType || null,
           fpcModel: formData.fpcModel || null,
           fpcType: formData.fpcType || null,
@@ -811,82 +1082,76 @@ export default function RDDepartmentPage() {
                       {/* 玻璃型号 */}
                       <div className="space-y-2">
                         <Label>玻璃型号 <span className="text-red-500">*</span></Label>
-                        <Select
+                        <Combobox
+                          options={mergedGlassOptions}
                           value={formData.glassModelId}
-                          onValueChange={(v) => {
-                            handleInputChange('glassModelId', v);
-                            if (v !== 'manual') handleInputChange('glassManualInput', '');
+                          onValueChange={(value, option) => {
+                            if (option) {
+                              handleInputChange('glassModelId', value);
+                              handleInputChange('glassManualInput', '');
+                            }
                           }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="请选择玻璃型号" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="manual">手动输入</SelectItem>
-                            {glassResources.map((glass) => (
-                              <SelectItem key={glass.id} value={glass.id.toString()}>
-                                {glass.modelNumber} ({glass.manufacturer || '未知'})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {formData.glassModelId === 'manual' && (
-                          <Input
-                            placeholder="请输入玻璃型号"
-                            value={formData.glassManualInput}
-                            onChange={(e) => handleInputChange('glassManualInput', e.target.value)}
-                          />
-                        )}
+                          onCustomInput={(inputValue) => {
+                            handleManualResourceInput('glass', inputValue, [
+                              ...glassResources,
+                              ...(mergedGlassOptions.filter(o => o.source === 'pending').map(o => ({
+                                id: o.id,
+                                modelNumber: o.label,
+                                manufacturer: o.subLabel as string | null,
+                              })))
+                            ]);
+                          }}
+                          placeholder="搜索或输入玻璃型号..."
+                          emptyMessage="没有找到匹配项，按 Enter 添加新物料"
+                          allowCustomInput={true}
+                        />
                       </div>
 
                       {/* IC型号 */}
                       <div className="space-y-2">
                         <Label>IC型号 <span className="text-red-500">*</span></Label>
-                        <Select
+                        <Combobox
+                          options={mergedICOptions}
                           value={formData.icModelId}
-                          onValueChange={(v) => {
-                            handleInputChange('icModelId', v);
-                            if (v !== 'manual') handleInputChange('icManualInput', '');
+                          onValueChange={(value, option) => {
+                            if (option) {
+                              handleInputChange('icModelId', value);
+                              handleInputChange('icManualInput', '');
+                            }
                           }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="请选择IC型号" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="manual">手动输入</SelectItem>
-                            {icResources.map((ic) => (
-                              <SelectItem key={ic.id} value={ic.id.toString()}>
-                                {ic.modelNumber} ({ic.manufacturer || '未知'})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {formData.icModelId === 'manual' && (
-                          <Input
-                            placeholder="请输入IC型号"
-                            value={formData.icManualInput}
-                            onChange={(e) => handleInputChange('icManualInput', e.target.value)}
-                          />
-                        )}
+                          onCustomInput={(inputValue) => {
+                            handleManualResourceInput('ic', inputValue, [
+                              ...icResources,
+                              ...(mergedICOptions.filter(o => o.source === 'pending').map(o => ({
+                                id: o.id,
+                                modelNumber: o.label,
+                                manufacturer: o.subLabel as string | null,
+                              })))
+                            ]);
+                          }}
+                          placeholder="搜索或输入IC型号..."
+                          emptyMessage="没有找到匹配项，按 Enter 添加新物料"
+                          allowCustomInput={true}
+                        />
                       </div>
+                    </div>
 
-                      {/* 偏光片类型 */}
-                      <div className="space-y-2">
-                        <Label>偏光片类型</Label>
-                        <Select
-                          value={formData.polarizerType}
-                          onValueChange={(v) => handleInputChange('polarizerType', v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="请选择偏光片类型" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {POLARIZER_TYPES.map((type) => (
-                              <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {/* 偏光片类型 */}
+                    <div className="space-y-2">
+                      <Label>偏光片类型</Label>
+                      <Select
+                        value={formData.polarizerType}
+                        onValueChange={(v) => handleInputChange('polarizerType', v)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="请选择偏光片类型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {POLARIZER_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     {/* FPC和背光 */}
@@ -1528,6 +1793,66 @@ export default function RDDepartmentPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* 资源确认弹窗 */}
+      <AlertDialog open={resourceDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setResourceDialog({ open: false, type: null, inputValue: '', similarResources: [], isNewResource: false });
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {resourceDialog.isNewResource 
+                ? `添加新的${resourceDialog.type === 'glass' ? '玻璃' : 'IC'}资源` 
+                : `发现相似的${resourceDialog.type === 'glass' ? '玻璃' : 'IC'}资源`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {resourceDialog.isNewResource ? (
+                <span>您输入的型号 "<strong>{resourceDialog.inputValue}</strong>" 在数据库中不存在，是否添加到采购库？</span>
+              ) : (
+                <>
+                  <p className="mb-2">您输入的型号与以下已有资源相似：</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {resourceDialog.similarResources.map((r) => (
+                      <li key={r.id}>
+                        <strong>{r.modelNumber}</strong> ({r.manufacturer || '未知厂商'})
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-3">请选择使用已有资源还是添加新资源？</p>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            {resourceDialog.isNewResource ? (
+              <>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={() => confirmUseResource(null, true)}>
+                  添加到数据库
+                </AlertDialogAction>
+              </>
+            ) : (
+              <>
+                {resourceDialog.similarResources.map((r) => (
+                  <AlertDialogAction 
+                    key={r.id} 
+                    onClick={() => confirmUseResource(r, false)}
+                    className="flex-1"
+                  >
+                    使用 {r.modelNumber}
+                  </AlertDialogAction>
+                ))}
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={() => confirmUseResource(null, true)} className="bg-slate-500 hover:bg-slate-600">
+                  添加新资源
+                </AlertDialogAction>
+              </>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -5,12 +5,15 @@ import { glassResourceManager } from '@/storage/database';
 import { icResourceManager } from '@/storage/database';
 import { qualityRecordManager } from '@/storage/database';
 import { componentCodeManager } from '@/storage/database';
+import { pendingGlassResourceManager, pendingIcResourceManager } from '@/storage/database';
 
 // GET - 获取诊断信息
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
+    const id = searchParams.get('id');
+    const type = searchParams.get('type');
 
     // 获取各表数据量
     const [requirements, solutions, glassResources, icResources, qualityRecords, componentCodes] = await Promise.all([
@@ -21,6 +24,17 @@ export async function GET(request: NextRequest) {
       qualityRecordManager.getQualityRecords({ limit: 1000 }),
       componentCodeManager.getComponentCodes({ limit: 1000 }),
     ]);
+
+    // 获取单个记录的详细信息
+    if (action === 'getOne' && id && type) {
+      let record = null;
+      if (type === 'requirement') {
+        record = await projectRequirementManager.getProjectRequirementById(parseInt(id));
+      } else if (type === 'solution') {
+        record = await designSolutionManager.getDesignSolutionById(parseInt(id));
+      }
+      return NextResponse.json({ success: true, data: record });
+    }
 
     const result: Record<string, unknown> = {
       status: 'ok',
@@ -36,9 +50,29 @@ export async function GET(request: NextRequest) {
       database: 'connected',
     };
 
-    if (action === 'full') {
+    // 返回关联数据视图
+    if (action === 'full' || action === 'relation') {
+      // 构建关联视图：项目需求 + 对应设计方案
+      const requirementMap = new Map<number, { id: number; solutions: unknown[] }>();
+      requirements.forEach((req: { id: number }) => {
+        requirementMap.set(req.id, {
+          id: req.id,
+          solutions: []
+        });
+      });
+      
+      // 将设计方案关联到对应的需求（使用 projectId 关联）
+      solutions.forEach((sol: { projectId: number | null }) => {
+        if (sol.projectId && requirementMap.has(sol.projectId)) {
+          const entry = requirementMap.get(sol.projectId);
+          if (entry) {
+            entry.solutions.push(sol);
+          }
+        }
+      });
+
       result.data = {
-        projectRequirements: requirements,
+        projectRequirements: Array.from(requirementMap.values()),
         designSolutions: solutions,
       };
     }
@@ -149,53 +183,156 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE - 清理数据库
-export async function DELETE(request: NextRequest) {
+// PUT - 更新单条数据
+export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { table, confirm } = body;
+    const { type, id, data } = body;
 
-    if (!confirm) {
+    if (!type || !id || !data) {
       return NextResponse.json({
         success: false,
-        message: '请确认删除操作：{"table": "all", "confirm": true}',
+        message: '缺少必要参数：type, id, data',
+      }, { status: 400 });
+    }
+
+    let result = null;
+    if (type === 'requirement') {
+      result = await projectRequirementManager.updateProjectRequirement(parseInt(id), data);
+    } else if (type === 'solution') {
+      result = await designSolutionManager.updateDesignSolution(parseInt(id), data);
+    } else if (type === 'quality') {
+      result = await qualityRecordManager.updateQualityRecord(parseInt(id), data);
+    } else {
+      return NextResponse.json({
+        success: false,
+        message: `未知类型: ${type}`,
+      }, { status: 400 });
+    }
+
+    if (!result) {
+      return NextResponse.json({
+        success: false,
+        message: '记录不存在或更新失败',
+      }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: result });
+  } catch (error) {
+    console.error('Update error:', error);
+    return NextResponse.json({
+      success: false,
+      message: '更新失败',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    }, { status: 500 });
+  }
+}
+
+// DELETE - 清理数据库或删除单条数据
+export async function DELETE(request: NextRequest) {
+  try {
+    let body: { table?: string; confirm?: boolean; type?: string; id?: number } = {};
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({
+        success: false,
+        message: '无效的请求数据',
+      }, { status: 400 });
+    }
+    const table = body.table;
+    const confirm = body.confirm;
+    const type = body.type;
+    const id = body.id;
+
+    // 单条数据删除
+    if (type && id) {
+      let success = false;
+      const idStr = String(id);
+      if (type === 'requirement') {
+        success = await projectRequirementManager.deleteProjectRequirement(parseInt(idStr));
+      } else if (type === 'solution') {
+        success = await designSolutionManager.deleteDesignSolution(parseInt(idStr));
+      } else if (type === 'glass') {
+        success = await glassResourceManager.deleteGlassResource(parseInt(idStr));
+      } else if (type === 'ic') {
+        success = await icResourceManager.deleteICResource(parseInt(idStr));
+      } else if (type === 'quality') {
+        success = await qualityRecordManager.deleteQualityRecord(parseInt(idStr));
+      } else if (type === 'component') {
+        success = await componentCodeManager.deleteComponentCode(parseInt(idStr));
+      } else {
+        return NextResponse.json({
+          success: false,
+          message: `未知类型: ${type}`,
+        }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success,
+        message: success ? '删除成功' : '删除失败，记录可能不存在',
       });
     }
 
-    const tables: Record<string, { 
-      getAll: () => Promise<{ id: number }[]>, 
+    // 表数据清理
+    if (!confirm) {
+      return NextResponse.json({
+        success: false,
+        message: '请确认删除操作：{"table": "tableName", "confirm": true}',
+      });
+    }
+
+    if (!table) {
+      return NextResponse.json({
+        success: false,
+        message: '缺少 table 参数',
+      }, { status: 400 });
+    }
+
+    const tables: Record<string, {
+      getAll: () => Promise<{ id: number }[]>,
       delete: (id: number) => Promise<boolean>,
-      name: string 
+      name: string
     }> = {
-      projectRequirements: { 
+      projectRequirements: {
         getAll: () => projectRequirementManager.getProjectRequirements({ limit: 1000 }) as Promise<{ id: number }[]>,
         delete: (id) => projectRequirementManager.deleteProjectRequirement(id),
-        name: 'project_requirements' 
+        name: 'project_requirements'
       },
-      designSolutions: { 
+      designSolutions: {
         getAll: () => designSolutionManager.getDesignSolutions({ limit: 1000 }) as Promise<{ id: number }[]>,
         delete: (id) => designSolutionManager.deleteDesignSolution(id),
-        name: 'design_solutions' 
+        name: 'design_solutions'
       },
-      glassResources: { 
+      glassResources: {
         getAll: () => glassResourceManager.getGlassResources({ limit: 1000 }) as Promise<{ id: number }[]>,
         delete: (id) => glassResourceManager.deleteGlassResource(id),
-        name: 'glass_resources' 
+        name: 'glass_resources'
       },
-      icResources: { 
+      icResources: {
         getAll: () => icResourceManager.getICResources({ limit: 1000 }) as Promise<{ id: number }[]>,
         delete: (id) => icResourceManager.deleteICResource(id),
-        name: 'ic_resources' 
+        name: 'ic_resources'
       },
-      qualityRecords: { 
+      qualityRecords: {
         getAll: () => qualityRecordManager.getQualityRecords({ limit: 1000 }) as Promise<{ id: number }[]>,
         delete: (id) => qualityRecordManager.deleteQualityRecord(id),
-        name: 'quality_records' 
+        name: 'quality_records'
       },
-      componentCodes: { 
+      componentCodes: {
         getAll: () => componentCodeManager.getComponentCodes({ limit: 1000 }) as Promise<{ id: number }[]>,
         delete: (id) => componentCodeManager.deleteComponentCode(id),
-        name: 'component_codes' 
+        name: 'component_codes'
+      },
+      pendingGlassResources: {
+        getAll: () => pendingGlassResourceManager.getPendingGlassResources({ limit: 1000 }) as Promise<{ id: number }[]>,
+        delete: (id) => pendingGlassResourceManager.deletePendingGlassResource(id),
+        name: 'pending_glass_resources'
+      },
+      pendingIcResources: {
+        getAll: () => pendingIcResourceManager.getPendingIcResources({ limit: 1000 }) as Promise<{ id: number }[]>,
+        delete: (id) => pendingIcResourceManager.deletePendingIcResource(id),
+        name: 'pending_ic_resources'
       },
     };
 
@@ -236,7 +373,7 @@ export async function DELETE(request: NextRequest) {
     console.error('Delete error:', error);
     return NextResponse.json({
       success: false,
-      message: '清理失败',
+      message: '操作失败',
       error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
