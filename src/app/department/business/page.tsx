@@ -13,20 +13,40 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast, Toaster } from 'sonner';
 
-// 生成需求编号：RFQ + 年份末两位 + 四位流水号
-// increment: 是否递增（只在确认提交时递增）
-function generateRequirementId(increment: boolean = false): string {
-  const year = new Date().getFullYear().toString().slice(-2);
-  const storageKey = 'requirementSequenceNumber';
-  let sequence = parseInt(localStorage.getItem(storageKey) || '0');
-  
-  if (increment) {
-    sequence = (sequence + 1) % 10000;
-    localStorage.setItem(storageKey, sequence.toString());
+// 从数据库获取最大编号，返回下一个编号
+async function fetchNextRequirementId(): Promise<string> {
+  try {
+    const res = await fetch('/api/project-requirements?limit=1000');
+    const data = await res.json();
+    const requirements = data.data || [];
+    
+    let maxSeq = 0;
+    requirements.forEach((req: { requirementId: string | null }) => {
+      if (req.requirementId) {
+        const match = req.requirementId.match(/RFQ-\d{2}-(\d+)/);
+        if (match) {
+          const seq = parseInt(match[1]);
+          if (seq > maxSeq) maxSeq = seq;
+        }
+      }
+    });
+    
+    // 下一个编号 = 最大编号 + 1，如果数据库为空则从1开始
+    const nextSeq = maxSeq + 1;
+    const year = new Date().getFullYear().toString().slice(-2);
+    return `RFQ-${year}-${nextSeq.toString().padStart(4, '0')}`;
+  } catch (e) {
+    console.error('获取编号失败:', e);
+    // 失败时使用本地时间戳作为备用
+    const year = new Date().getFullYear().toString().slice(-2);
+    return `RFQ-${year}-0001`;
   }
-  
-  const sequenceStr = sequence.toString().padStart(4, '0');
-  return `RFQ-${year}-${sequenceStr}`;
+}
+
+// 兼容旧的同步函数（用于初始化）
+function generateRequirementId(): string {
+  const year = new Date().getFullYear().toString().slice(-2);
+  return `RFQ-${year}-0001`;
 }
 
 // 技术类别选项
@@ -190,6 +210,10 @@ export default function BusinessDepartmentPage() {
 
   useEffect(() => {
     setMounted(true);
+    // 页面加载时获取下一个编号用于显示
+    fetchNextRequirementId().then((nextId) => {
+      setRequirementId(nextId);
+    });
   }, []);
 
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
@@ -232,15 +256,15 @@ export default function BusinessDepartmentPage() {
   };
 
   // 预览打印
-  const handlePreview = () => {
+  const handlePreview = async () => {
     // 基本验证
     if (!formData.businessGroup || !formData.customerName || !formData.productCategory || !formData.projectLevel) {
       toast.error('请填写所有必填项');
       return;
     }
     
-    // 生成需求编号（不递增，只有确认提交时才递增）
-    const newRequirementId = generateRequirementId(false);
+    // 从数据库获取下一个编号
+    const newRequirementId = await fetchNextRequirementId();
     setRequirementId(newRequirementId);
     setShowPreview(true);
   };
@@ -285,9 +309,6 @@ export default function BusinessDepartmentPage() {
       if (!response.ok) {
         throw new Error(result.error || result.details || '提交失败');
       }
-
-      // 提交成功后递增序列号
-      generateRequirementId(true);
       
       setShowPreview(false);
       setShowSuccess(true);

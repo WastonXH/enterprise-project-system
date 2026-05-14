@@ -53,10 +53,30 @@ export async function GET(request: NextRequest) {
     // 返回关联数据视图
     if (action === 'full' || action === 'relation') {
       // 构建关联视图：项目需求 + 对应设计方案
-      const requirementMap = new Map<number, { id: number; solutions: unknown[] }>();
-      requirements.forEach((req: { id: number }) => {
+      const requirementMap = new Map<number, {
+        id: number;
+        requirementId: string | null;
+        customerName: string | null;
+        productCategory: string | null;
+        projectLevel: string | null;
+        createdAt: string;
+        solutions: unknown[];
+      }>();
+      requirements.forEach((req: {
+        id: number;
+        requirementId: string | null;
+        customerName: string | null;
+        productCategory: string | null;
+        projectLevel: string | null;
+        createdAt: string;
+      }) => {
         requirementMap.set(req.id, {
           id: req.id,
+          requirementId: req.requirementId,
+          customerName: req.customerName,
+          productCategory: req.productCategory,
+          projectLevel: req.projectLevel,
+          createdAt: req.createdAt,
           solutions: []
         });
       });
@@ -198,6 +218,19 @@ export async function PUT(request: NextRequest) {
 
     let result = null;
     if (type === 'requirement') {
+      // 检查需求编号是否重复（排除当前记录）
+      if (data.requirementId) {
+        const allRequirements = await projectRequirementManager.getProjectRequirements({ limit: 1000 });
+        const existing = allRequirements.find(r =>
+          r.requirementId === data.requirementId && r.id !== parseInt(id)
+        );
+        if (existing) {
+          return NextResponse.json({
+            success: false,
+            message: `需求编号 ${data.requirementId} 已存在，请使用其他编号`,
+          }, { status: 400 });
+        }
+      }
       result = await projectRequirementManager.updateProjectRequirement(parseInt(id), data);
     } else if (type === 'solution') {
       result = await designSolutionManager.updateDesignSolution(parseInt(id), data);

@@ -418,6 +418,88 @@ pnpm lint
 
 ## 更新日志
 
+### 2026-05-09 (下午)
+
+**Bug 修复**: 解决 coze-coding-dev-sdk 模块解析问题
+
+**问题描述**:
+- 诊断页面操作（删除、清空数据等）报错 500
+- 错误信息: `_rslib_runtime_mjs__WEBPACK_IMPORTED_MODULE_11__.__webpack_require__.add is not a function`
+
+**根本原因**:
+`coze-coding-dev-sdk` 使用 rslib 构建，生成的 ESM 代码使用了 webpack 内部 API `__webpack_require__.add`，但该 API 在 Next.js 16 的 webpack 环境中不可用。
+
+**修复内容**:
+在 `next.config.ts` 中添加 `serverExternalPackages` 配置，让 Node.js 运行时直接加载该包，避免 webpack 打包解析问题：
+
+```typescript
+const nextConfig: NextConfig = {
+  serverExternalPackages: ['coze-coding-dev-sdk'],
+};
+```
+
+**影响范围**:
+- `next.config.ts`: 添加 serverExternalPackages 配置
+
+**测试结果**:
+- ✅ 清空数据 API 正常
+- ✅ 删除需求 API 正常
+- ✅ 诊断页面正常
+
+### 2026-05-09 (编号管理修复)
+
+**功能优化**: 修复需求编号生成逻辑并增强编号管理
+
+**问题描述**:
+- 需求编号从0000开始而非0001
+- 删除需求后编号不连续（跳号问题）
+- 无法同步本地流水号与数据库最大编号
+
+**修复内容**:
+1. 业务部编号生成逻辑修复：`|| '1'` 改为 `|| '1'`，确保从0001开始
+2. 诊断页面新增"编号管理"卡片：
+   - 显示数据库中最大编号
+   - 显示下一个需求的预计编号
+   - **同步编号**：将本地流水号同步为数据库最大编号
+   - **重置编号**：清除本地流水号，从0001开始
+3. API增加需求编号唯一性校验
+
+**影响范围**:
+- `src/app/department/business/page.tsx`: 编号生成逻辑修复
+- `src/app/diagnosis/page.tsx`: 新增编号管理功能
+- `src/app/api/diagnosis/route.ts`: 添加编号重复校验
+
+**测试结果**:
+- ✅ TypeScript 类型检查通过
+- ✅ 页面返回 200 状态码
+- ✅ 编号管理功能正常
+
+### 2026-05-09 (上午)
+
+**Bug 修复**: 诊断页面完全重写
+
+**问题描述**:
+- 诊断页面 `/diagnosis` 因多次增量编辑导致文件损坏
+- 存在重复函数声明（handleEdit、loadDiagnosis、loadRelationData）
+- 缺少必要状态变量和类型定义
+- 页面返回 500 错误
+
+**修复内容**:
+- 完全重写诊断页面，清除所有重复代码
+- 重构状态管理：showMessage, dataCount, loading, message, selectedRequirement, showEditDialog, searchQuery, relationData
+- 添加完整 TypeScript 类型定义
+- 保持原有功能：
+  - 数据状态 Tab：数据库状态查看、数据清理、重置需求编号
+  - 需求-关联视图 Tab：需求列表、设计方案关联、搜索、编辑编号、删除
+
+**影响范围**:
+- `src/app/diagnosis/page.tsx`: 完全重写
+
+**测试结果**:
+- ✅ TypeScript 类型检查通过
+- ✅ 页面返回 200 状态码
+- ✅ 服务运行正常（5000 端口）
+
 ### 2026-05-07 (下午)
 
 **诊断页面增强**：

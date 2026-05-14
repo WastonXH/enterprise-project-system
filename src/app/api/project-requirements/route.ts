@@ -11,6 +11,23 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const validated = insertProjectRequirementSchema.parse(body)
+    
+    // 检查编号是否已存在
+    if (validated.requirementId) {
+      const existing = await projectRequirementManager.getProjectRequirements({
+        limit: 1000
+      })
+      const duplicate = existing.find((r: { requirementId: string | null }) => 
+        r.requirementId === validated.requirementId
+      )
+      if (duplicate) {
+        return NextResponse.json(
+          { error: `需求编号 ${validated.requirementId} 已存在，请使用其他编号` },
+          { status: 400 }
+        )
+      }
+    }
+    
     const requirement = await projectRequirementManager.createProjectRequirement(validated)
 
     return NextResponse.json(
