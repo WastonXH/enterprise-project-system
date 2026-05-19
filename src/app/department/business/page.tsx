@@ -14,11 +14,27 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast, Toaster } from 'sonner';
 
 // 从数据库获取最大编号，返回下一个编号
+// 如果数据库不可用，回退到 localStorage 编号
 async function fetchNextRequirementId(): Promise<string> {
+  const year = new Date().getFullYear().toString().slice(-2);
+  const storageKey = 'requirementSequenceNumber';
+  
   try {
     const res = await fetch('/api/project-requirements?limit=1000');
+    
+    // 检查 API 响应是否成功
+    if (!res.ok) {
+      console.warn('数据库API不可用，回退到localStorage编号');
+      return getNextIdFromLocalStorage(year, storageKey);
+    }
+    
     const data = await res.json();
     const requirements = data.data || [];
+    
+    // 如果数据为空或获取失败，从 localStorage 获取
+    if (requirements.length === 0) {
+      return getNextIdFromLocalStorage(year, storageKey);
+    }
     
     let maxSeq = 0;
     requirements.forEach((req: { requirementId: string | null }) => {
@@ -31,22 +47,25 @@ async function fetchNextRequirementId(): Promise<string> {
       }
     });
     
-    // 下一个编号 = 最大编号 + 1，如果数据库为空则从1开始
+    // 下一个编号 = 最大编号 + 1
     const nextSeq = maxSeq + 1;
-    const year = new Date().getFullYear().toString().slice(-2);
+    
+    // 同步 localStorage，确保一致性
+    localStorage.setItem(storageKey, nextSeq.toString());
+    
     return `RFQ-${year}-${nextSeq.toString().padStart(4, '0')}`;
   } catch (e) {
-    console.error('获取编号失败:', e);
-    // 失败时使用本地时间戳作为备用
-    const year = new Date().getFullYear().toString().slice(-2);
-    return `RFQ-${year}-0001`;
+    console.error('获取编号失败，回退到localStorage:', e);
+    return getNextIdFromLocalStorage(year, storageKey);
   }
 }
 
-// 兼容旧的同步函数（用于初始化）
-function generateRequirementId(): string {
-  const year = new Date().getFullYear().toString().slice(-2);
-  return `RFQ-${year}-0001`;
+// 从 localStorage 获取下一个编号（回退方案）
+function getNextIdFromLocalStorage(year: string, storageKey: string): string {
+  let sequence = parseInt(localStorage.getItem(storageKey) || '0');
+  sequence = Math.max(sequence + 1, 1); // 确保从 1 开始
+  localStorage.setItem(storageKey, sequence.toString());
+  return `RFQ-${year}-${sequence.toString().padStart(4, '0')}`;
 }
 
 // 技术类别选项
