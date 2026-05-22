@@ -60,10 +60,32 @@ export default function DiagnosisPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [newRequirementId, setNewRequirementId] = useState('');
   const [maxSequence, setMaxSequence] = useState<number>(0);
+  const [dbDiagnosisResult, setDbDiagnosisResult] = useState<any>(null);
 
   const showMessage = (type: 'success' | 'error', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 5000);
+  };
+
+  // 数据库诊断函数
+  const runDbDiagnosis = async () => {
+    setLoading('diagnosis');
+    setDbDiagnosisResult(null);
+    try {
+      const res = await fetch('/api/db-diagnosis');
+      const data = await res.json();
+      setDbDiagnosisResult(data);
+    } catch (e) {
+      setDbDiagnosisResult({
+        results: [{
+          step: '诊断失败',
+          status: 'error',
+          message: '无法连接到诊断API',
+          error: (e as Error).message
+        }]
+      });
+    }
+    setLoading(null);
   };
 
   const loadDiagnosis = async () => {
@@ -289,6 +311,59 @@ export default function DiagnosisPage() {
                     </Button>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* 数据库诊断卡片 */}
+            <Card className="mt-4">
+              <CardHeader>
+                <CardTitle>数据库连接诊断</CardTitle>
+                <CardDescription>检测数据库连接状态，定位连接问题</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={runDbDiagnosis}
+                  disabled={loading === 'diagnosis'}
+                  className="mb-4"
+                >
+                  {loading === 'diagnosis' ? '诊断中...' : '开始诊断'}
+                </Button>
+                
+                {dbDiagnosisResult && (
+                  <div className="mt-4 space-y-3">
+                    <div className="text-sm text-gray-500">
+                      诊断时间: {new Date(dbDiagnosisResult.timestamp).toLocaleString()}
+                    </div>
+                    {dbDiagnosisResult.results.map((result: any, index: number) => (
+                      <div 
+                        key={index}
+                        className={`p-3 rounded-lg border ${
+                          result.status === 'success' ? 'bg-green-50 border-green-200' :
+                          result.status === 'error' ? 'bg-red-50 border-red-200' :
+                          'bg-yellow-50 border-yellow-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
+                            {result.status === 'success' ? '✅' : result.status === 'error' ? '❌' : '⚠️'}
+                          </span>
+                          <span className="font-medium">{result.step}</span>
+                        </div>
+                        <div className="mt-1 text-sm text-gray-600">{result.message}</div>
+                        {result.error && (
+                          <div className="mt-2 text-sm text-red-600 font-mono bg-red-100 p-2 rounded">
+                            {result.error}
+                          </div>
+                        )}
+                        {result.data && (
+                          <div className="mt-2 text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                            <pre>{JSON.stringify(result.data, null, 2)}</pre>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
