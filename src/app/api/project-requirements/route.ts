@@ -10,13 +10,37 @@ import { z } from "zod"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    
+    // 调试：检查环境变量
+    const dbUrl = process.env.PGDATABASE_URL
+    if (!dbUrl) {
+      return NextResponse.json(
+        { error: "PGDATABASE_URL 环境变量未设置", step: "env_check" },
+        { status: 500 }
+      )
+    }
+    
     const validated = insertProjectRequirementSchema.parse(body)
     
     // 检查编号是否已存在
     if (validated.requirementId) {
-      const existing = await projectRequirementManager.getProjectRequirements({
-        limit: 1000
-      })
+      let existing
+      try {
+        existing = await projectRequirementManager.getProjectRequirements({
+          limit: 1000
+        })
+      } catch (dbError) {
+        console.error("查询已有需求失败:", dbError)
+        return NextResponse.json(
+          { 
+            error: "查询已有需求失败", 
+            step: "check_duplicate",
+            details: dbError instanceof Error ? dbError.message : "未知错误"
+          },
+          { status: 500 }
+        )
+      }
+      
       const duplicate = existing.find((r: { requirementId: string | null }) => 
         r.requirementId === validated.requirementId
       )
@@ -28,7 +52,21 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    const requirement = await projectRequirementManager.createProjectRequirement(validated)
+    let requirement
+    try {
+      requirement = await projectRequirementManager.createProjectRequirement(validated)
+    } catch (dbError) {
+      console.error("创建需求失败:", dbError)
+      return NextResponse.json(
+        { 
+          error: "创建需求失败", 
+          step: "create_requirement",
+          details: dbError instanceof Error ? dbError.message : "未知错误",
+          stack: dbError instanceof Error ? dbError.stack?.split('\n').slice(0, 3).join('\n') : undefined
+        },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json(
       {
@@ -65,15 +103,38 @@ export async function GET(request: NextRequest) {
     const projectLevel = searchParams.get("projectLevel") || undefined
     const businessGroup = searchParams.get("businessGroup") || undefined
 
-    const requirements = await projectRequirementManager.getProjectRequirements({
-      skip,
-      limit,
-      filters: {
-        customerName,
-        projectLevel,
-        businessGroup,
-      },
-    })
+    // 调试：检查环境变量
+    const dbUrl = process.env.PGDATABASE_URL
+    if (!dbUrl) {
+      return NextResponse.json(
+        { error: "PGDATABASE_URL 环境变量未设置", step: "env_check" },
+        { status: 500 }
+      )
+    }
+
+    let requirements
+    try {
+      requirements = await projectRequirementManager.getProjectRequirements({
+        skip,
+        limit,
+        filters: {
+          customerName,
+          projectLevel,
+          businessGroup,
+        },
+      })
+    } catch (dbError) {
+      console.error("数据库操作失败:", dbError)
+      return NextResponse.json(
+        { 
+          error: "数据库操作失败", 
+          step: "db_operation",
+          details: dbError instanceof Error ? dbError.message : "未知错误",
+          stack: dbError instanceof Error ? dbError.stack?.split('\n').slice(0, 3).join('\n') : undefined
+        },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       data: requirements,
